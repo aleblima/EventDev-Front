@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../config/api'
+import { API_BASE_URL } from '@/config/api'
 
-export const signIn = async (credentials) => {
+export async function signIn(credentials) {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/signin`, {
       method: 'POST',
@@ -20,7 +20,7 @@ export const signIn = async (credentials) => {
   }
 }
 
-export const signUpCommunity = async (communityData) => {
+export async function signUpCommunity(communityData) {
   try {
     const payload = {
       ...communityData,
@@ -32,10 +32,10 @@ export const signUpCommunity = async (communityData) => {
 
     // Remove logo_url se estiver vazio, inválido ou não for uma URL válida
     if (
-      !payload.logo_url ||
-      typeof payload.logo_url !== 'string' ||
-      payload.logo_url.trim() === '' ||
-      (!payload.logo_url.startsWith('http://') && !payload.logo_url.startsWith('https://'))
+      !payload.logo_url
+      || typeof payload.logo_url !== 'string'
+      || payload.logo_url.trim() === ''
+      || (!payload.logo_url.startsWith('http://') && !payload.logo_url.startsWith('https://'))
     ) {
       delete payload.logo_url
       console.warn('logo_url removido do payload')
@@ -55,10 +55,35 @@ export const signUpCommunity = async (communityData) => {
       throw new Error(errorData.message || 'Erro ao cadastrar comunidade')
     }
 
-    const result = await response.json()
-    return result
+    return await response.json()
   } catch (error) {
     console.error('Erro ao cadastrar comunidade:', error)
+    throw error
+  }
+}
+
+export async function signUp(userData) {
+  try {
+    const payload = {
+      ...userData,
+      role: 'user',
+      is_active: true
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Erro ao cadastrar usuário')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Erro ao cadastrar usuário:', error)
     throw error
   }
 }

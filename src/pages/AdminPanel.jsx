@@ -1,17 +1,61 @@
-import React, { useState } from 'react'
-import Container from '@mui/material/Container'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
+import Container from '@mui/material/Container'
 import FormControl from '@mui/material/FormControl'
-import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
+import Paper from '@mui/material/Paper'
+import Select from '@mui/material/Select'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 
-const AdminPanel = () => {
+import { API_BASE_URL } from '@/config/api'
+
+async function checkAdminAuth() {
+  try {
+    const authCheck = await fetch('http://localhost:5122/api/v1/auth/me', {
+      method: 'GET',
+      credentials: 'include'
+    })
+
+    if (authCheck.ok) {
+      const userData = await authCheck.json()
+      console.error('Usuário logado:', userData)
+      console.error('Papéis do usuário:', userData.user?.roles)
+      console.error('É admin?', userData.user?.roles?.includes('admin'))
+    } else {
+      console.error('Não logado ou sem acesso:', authCheck.status)
+    }
+  } catch (authError) {
+    console.error('Erro ao verificar auth:', authError)
+  }
+}
+
+async function createAdminUser(formData) {
+  const requestBody = {
+    email: formData.email,
+    password: formData.password,
+    role: formData.role
+  }
+
+  console.error('Enviando dados:', { email: formData.email, password: '[REDACTED]', role: formData.role })
+
+  console.error('Corpo da requisição completo (sem senha):', { ...requestBody, password: '[REDACTED]' })
+
+  // Usar a rota correta para admin criar usuários
+  return await fetch(`${API_BASE_URL}/auth/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include', // Para incluir cookies de sessão
+    body: JSON.stringify(requestBody)
+  })
+}
+
+export default function AdminPanel() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -34,43 +78,10 @@ const AdminPanel = () => {
     setMessage({ type: '', text: '' })
 
     // Verificar se está logado como admin
-    try {
-      const authCheck = await fetch('http://localhost:5122/api/v1/auth/me', {
-        method: 'GET',
-        credentials: 'include'
-      })
-
-      if (authCheck.ok) {
-        const userData = await authCheck.json()
-        console.error('Usuário logado:', userData)
-        console.error('Papéis do usuário:', userData.user?.roles)
-        console.error('É admin?', userData.user?.roles?.includes('admin'))
-      } else {
-        console.error('Não logado ou sem acesso:', authCheck.status)
-      }
-    } catch (authError) {
-      console.error('Erro ao verificar auth:', authError)
-    }
+    await checkAdminAuth()
 
     try {
-      const requestBody = {
-        email: formData.email,
-        password: formData.password,
-        role: formData.role
-      }
-
-      console.error('Enviando dados:', { email: formData.email, password: '***', role: formData.role })
-      console.error('Corpo da requisição completo (sem senha):', { ...requestBody, password: '***' })
-
-      // Usar a rota correta para admin criar usuários
-      const response = await fetch('http://localhost:5122/api/v1/auth/admin/create-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // Para incluir cookies de sessão
-        body: JSON.stringify(requestBody)
-      })
+      const response = await createAdminUser(formData)
 
       if (response.ok) {
         setMessage({ type: 'success', text: 'Usuário criado com sucesso!' })
@@ -99,7 +110,7 @@ const AdminPanel = () => {
 
   return (
     <Container
-      maxWidth='sm'
+      maxWidth="sm"
       sx={{ paddingTop: '3.5rem' }}>
       <Paper
         sx={{
@@ -115,8 +126,8 @@ const AdminPanel = () => {
         {/* Cabeçalho */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
           <Typography
-            variant='h2'
-            component='h1'
+            variant="h2"
+            component="h1"
             sx={{ marginBottom: '1rem' }}>
             <span
               style={{
@@ -129,8 +140,8 @@ const AdminPanel = () => {
             </span>
           </Typography>
           <Typography
-            variant='body1'
-            component='p'
+            variant="body1"
+            component="p"
             sx={{ color: '#64748B', textAlign: 'center' }}>
             Criar novo usuário na plataforma
           </Typography>
@@ -143,24 +154,23 @@ const AdminPanel = () => {
           {/* Email */}
           <Box>
             <Typography
-              component='label'
-              htmlFor='email'
-              variant='subtitle1'
-              fontWeight='bold'
+              component="label"
+              htmlFor="email"
+              variant="subtitle1"
+              fontWeight="bold"
               sx={{ marginBottom: '0.5rem', display: 'block' }}>
               Email de acesso
             </Typography>
             <TextField
-              id='email'
-              name='email'
-              type='email'
-              placeholder='Email de acesso do usuário'
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Email de acesso do usuário"
               value={formData.email}
               onChange={handleChange}
               required
-              variant='outlined'
-              fullWidth
-            />
+              variant="outlined"
+              fullWidth />
           </Box>
 
           {/* Senha + Role */}
@@ -173,44 +183,43 @@ const AdminPanel = () => {
             {/* Senha */}
             <Box sx={{ flex: 1 }}>
               <Typography
-                component='label'
-                htmlFor='password'
-                variant='subtitle1'
-                fontWeight='bold'
+                component="label"
+                htmlFor="password"
+                variant="subtitle1"
+                fontWeight="bold"
                 sx={{ marginBottom: '0.5rem', display: 'block' }}>
                 Senha
               </Typography>
               <TextField
                 fullWidth
-                id='password'
-                name='password'
-                type='password'
-                placeholder='Digite a senha'
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Digite a senha"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                variant='outlined'
-              />
+                variant="outlined" />
             </Box>
 
             {/* Role */}
             <Box sx={{ flex: 1 }}>
               <Typography
-                component='label'
-                htmlFor='role'
-                variant='subtitle1'
-                fontWeight='bold'
+                component="label"
+                htmlFor="role"
+                variant="subtitle1"
+                fontWeight="bold"
                 sx={{ marginBottom: '0.5rem', display: 'block' }}>
                 Tipo de Usuário
               </Typography>
               <FormControl fullWidth>
                 <Select
-                  id='role'
-                  name='role'
+                  id="role"
+                  name="role"
                   value={formData.role}
                   onChange={handleChange}>
-                  <MenuItem value='community'>Comunidade</MenuItem>
-                  <MenuItem value='user'>Usuário</MenuItem>
+                  <MenuItem value="community">Comunidade</MenuItem>
+                  <MenuItem value="user">Usuário</MenuItem>
                 </Select>
               </FormControl>
             </Box>
@@ -221,17 +230,18 @@ const AdminPanel = () => {
 
           {/* Botão */}
           <Button
-            type='submit'
-            variant='contained'
+            type="submit"
+            variant="contained"
             disabled={loading}
             fullWidth
             startIcon={
-              loading ? (
-                <CircularProgress
-                  size={20}
-                  color='inherit'
-                />
-              ) : null
+              loading
+                ? (
+                    <CircularProgress
+                      size={20}
+                      color="inherit" />
+                  )
+                : null
             }
             sx={{
               'backgroundColor': '#fc692d',
@@ -248,5 +258,3 @@ const AdminPanel = () => {
     </Container>
   )
 }
-
-export default AdminPanel

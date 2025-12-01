@@ -1,4 +1,8 @@
-export const lightTheme = {
+import { createTheme } from '@mui/material/styles'
+
+const BLACK_12 = 'rgba(0, 0, 0, 0.12)'
+
+const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -47,7 +51,7 @@ export const lightTheme = {
       default: '#F8F9FC',
       paper: '#FFFFFF'
     },
-    divider: 'rgba(0, 0, 0, 0.12)',
+    divider: BLACK_12,
     action: {
       active: 'rgba(0, 0, 0, 0.54)',
       hover: 'rgba(0, 0, 0, 0.04)',
@@ -55,9 +59,9 @@ export const lightTheme = {
       selected: 'rgba(0, 0, 0, 0.08)',
       selectedOpacity: 0.08,
       disabled: 'rgba(0, 0, 0, 0.26)',
-      disabledBackground: 'rgba(0, 0, 0, 0.12)',
+      disabledBackground: BLACK_12,
       disabledOpacity: 0.38,
-      focus: 'rgba(0, 0, 0, 0.12)',
+      focus: BLACK_12,
       focusOpacity: 0.12,
       activatedOpacity: 0.12
     }
@@ -263,6 +267,6 @@ export const lightTheme = {
       }
     }
   }
-}
+})
 
 export default lightTheme

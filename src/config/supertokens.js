@@ -1,9 +1,10 @@
 import SuperTokens from 'supertokens-auth-react'
 import EmailPassword from 'supertokens-auth-react/recipe/emailpassword'
 import Session from 'supertokens-auth-react/recipe/session'
-import { API_DOMAIN } from './api'
 
-export const initSuperTokens = () => {
+import { API_DOMAIN } from '@/config/api'
+
+export function initSuperTokens() {
   SuperTokens.init({
     appInfo: {
       appName: 'EventDev Communities',

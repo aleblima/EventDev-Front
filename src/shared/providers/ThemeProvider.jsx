@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, createContext, useContext, useCallback } from 'react'
-
-import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
+import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 
-import lightTheme from '@/shared/themes/light.theme.js'
 import darkTheme from '@/shared/themes/dark.theme.js'
+import lightTheme from '@/shared/themes/light.theme.js'
 
 const ThemeContext = createContext({
   mode: 'light',
@@ -12,7 +11,7 @@ const ThemeContext = createContext({
 })
 
 export function UseTheme() {
-  return useContext(ThemeContext)
+  return use(ThemeContext)
 }
 
 export function ThemeProvider({ children }) {
@@ -30,11 +29,11 @@ export function ThemeProvider({ children }) {
   const themeProviderProps = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme])
 
   return (
-    <ThemeContext.Provider value={themeProviderProps}>
+    <ThemeContext value={themeProviderProps}>
       <MuiThemeProvider theme={themeOptions}>
         <CssBaseline enableColorScheme />
         {children}
       </MuiThemeProvider>
-    </ThemeContext.Provider>
+    </ThemeContext>
   )
 }

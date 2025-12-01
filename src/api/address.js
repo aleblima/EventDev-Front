@@ -1,8 +1,8 @@
-import { API_BASE_URL } from '../config/api.js'
+import { API_BASE_URL } from '@/config/api'
 
-export const getEnderecos = async () => {
+export async function getEnderecos() {
   try {
-    const response = await fetch(`${API_BASE_URL}/address`)
+    const response = await fetch(`${API_BASE_URL}/address`, { credentials: 'include' })
     if (!response.ok) {
       throw new Error('Network response was not ok')
     }
@@ -13,7 +13,7 @@ export const getEnderecos = async () => {
   }
 }
 
-export const getEnderecoById = async (id) => {
+export async function getEnderecoById(id) {
   try {
     const response = await fetch(`${API_BASE_URL}/address/${id}`)
     if (!response.ok) {
@@ -26,7 +26,7 @@ export const getEnderecoById = async (id) => {
   }
 }
 
-export const createEndereco = async (dadosEndereco) => {
+export async function createEndereco(dadosEndereco) {
   try {
     const payload = {
       ...dadosEndereco
@@ -54,7 +54,7 @@ export const createEndereco = async (dadosEndereco) => {
   }
 }
 
-export const updateEndereco = async (id, dadosEndereco) => {
+export async function updateEndereco(id, dadosEndereco) {
   try {
     const payload = {
       ...dadosEndereco,
@@ -81,7 +81,7 @@ export const updateEndereco = async (id, dadosEndereco) => {
   }
 }
 
-export const deleteEndereco = async (id) => {
+export async function deleteEndereco(id) {
   try {
     const response = await fetch(`${API_BASE_URL}/address/${id}`, {
       method: 'DELETE',
@@ -99,7 +99,7 @@ export const deleteEndereco = async (id) => {
   }
 }
 
-export const getEnderecoByCep = async (cep) => {
+export async function getEnderecoByCep(cep) {
   try {
     const response = await fetch(`https://viacep.com.br/ws/${cep}/json`)
     if (!response.ok) {

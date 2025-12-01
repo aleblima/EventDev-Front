@@ -1,19 +1,22 @@
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
 import CardContent from '@mui/material/CardContent'
 import CardMedia from '@mui/material/CardMedia'
-import Typography from '@mui/material/Typography'
-import CardActionArea from '@mui/material/CardActionArea'
 import Link from '@mui/material/Link'
-import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../providers/useAuth'
+
+import { useAuth } from '@/shared/providers/useAuth'
 
 export default function FeaturedCard({ comunidade }) {
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const getInitials = (name) => {
-    if (!name) return '?'
+    if (!name) {
+      return '?'
+    }
     return name
       .split(' ')
       .filter((word) => word.length > 0)
@@ -23,15 +26,16 @@ export default function FeaturedCard({ comunidade }) {
       .toUpperCase()
   }
 
-  const hasValidLogo = comunidade.logo_url && comunidade.logo_url.trim() !== '' && typeof comunidade.logo_url === 'string'
+  const logoUrl = comunidade.logoUrl || comunidade.logo_url
+  const hasValidLogo = logoUrl && logoUrl.trim() !== '' && typeof logoUrl === 'string'
 
   const handleLinkClick = (e) => {
     e.preventDefault()
     e.stopPropagation()
     if (user?.communityId === comunidade.id) {
-      navigate(`/meu-perfil/${comunidade.id}`)
+      navigate(`/minha-comunidade/${comunidade.id}`)
     } else {
-      navigate(`/perfil-comunidade/${comunidade.id}`)
+      navigate(`/comunidades/${comunidade.id}`)
     }
   }
 
@@ -39,7 +43,12 @@ export default function FeaturedCard({ comunidade }) {
     <Card
       onClick={handleLinkClick}
       sx={{
-        width: { xs: '100%', sm: '49%', md: '32%', lg: '23.5%' },
+        width: {
+          xs: '100%',
+          sm: 'calc(50% - 8px)',
+          md: 'calc(33.333% - 10.67px)',
+          lg: 'calc(25% - 12px)'
+        },
         display: 'flex',
         flexDirection: 'column',
         textAlign: 'center',
@@ -54,56 +63,58 @@ export default function FeaturedCard({ comunidade }) {
           flexDirection: 'column',
           height: '100%'
         }}>
-        {hasValidLogo ? (
-          <CardMedia
-            component='img'
-            image={comunidade.logo_url}
-            alt={`Logo da comunidade ${comunidade.name}`}
-            sx={{
-              height: '100px',
-              width: '100px',
-              borderRadius: '50%',
-              display: 'flex',
-              justifySelf: 'center',
-              margin: '0 auto',
-              objectFit: 'cover'
-            }}
-          />
-        ) : (
-          <Box
-            sx={{
-              height: '100px',
-              width: '100px',
-              borderRadius: '50%',
-              backgroundColor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto'
-            }}>
-            <Typography
-              variant='h4'
-              sx={{
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '2rem',
-                lineHeight: 1
-              }}>
-              {getInitials(comunidade.name)}
-            </Typography>
-          </Box>
-        )}
+        {hasValidLogo
+          ? (
+              <CardMedia
+                component="img"
+                image={logoUrl}
+                alt={`Logo da comunidade ${comunidade.name}`}
+                sx={{
+                  height: '100px',
+                  width: '100px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  justifySelf: 'center',
+                  margin: '0 auto',
+                  objectFit: 'cover',
+                  border: '2px solid #00000010'
+                }} />
+            )
+          : (
+              <Box
+                sx={{
+                  height: '100px',
+                  width: '100px',
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto'
+                }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '2rem',
+                    lineHeight: 1
+                  }}>
+                  {getInitials(comunidade.name)}
+                </Typography>
+              </Box>
+            )}
 
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography
-            variant='h5'
-            paddingBottom='20px'>
+            variant="h5"
+            paddingBottom="20px">
             {comunidade.name}
           </Typography>
 
           <Typography
-            variant='body2'
-            color='text.secondary'
+            variant="body2"
+            color="text.secondary"
             sx={{
               display: '-webkit-box',
               WebkitLineClamp: 3,
@@ -117,9 +128,9 @@ export default function FeaturedCard({ comunidade }) {
 
         <Link
           fontWeight={700}
-          underline='hover'
-          variant='caption'
-          href={`/perfil-comunidade/${comunidade.id}`}
+          underline="hover"
+          variant="caption"
+          href={`/comunidades/${comunidade.id}`}
           onClick={handleLinkClick}
           sx={{ marginTop: 'auto' }}>
           Ver perfil

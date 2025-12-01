@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Link from '@mui/material/Link'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import styles from './Login.module.css'
-import Button from '@mui/material/Button'
-import Link from '@mui/material/Link'
-import Alert from '@mui/material/Alert'
-import CircularProgress from '@mui/material/CircularProgress'
-import EmailPassword from 'supertokens-auth-react/recipe/emailpassword'
+import { useState } from 'react'
+
+import { signIn } from '@/api/auth'
 import { useAuth } from '@/shared/providers/useAuth'
+
+import styles from '@/shared/components/FormLogin/Login.module.css'
 
 export default function FormLogin() {
   const [loading, setLoading] = useState(false)
@@ -25,12 +27,7 @@ export default function FormLogin() {
     const password = formData.get('password')
 
     try {
-      const response = await EmailPassword.signIn({
-        formFields: [
-          { id: 'email', value: email },
-          { id: 'password', value: password }
-        ]
-      })
+      const response = await signIn({ email, password })
 
       if (response.status === 'OK') {
         setMessage({ type: 'success', text: 'Login realizado com sucesso!' })
@@ -38,39 +35,23 @@ export default function FormLogin() {
         // Atualizar o contexto de autenticação
         await checkAuth()
 
-        // Buscar dados do usuário para redirecionamento
-        try {
-          const userResponse = await fetch('http://localhost:5122/api/v1/auth/me', {
-            method: 'GET',
-            credentials: 'include'
-          })
+        const userData = response
 
-          if (userResponse.ok) {
-            const userData = await userResponse.json()
-
-            // Redirecionar baseado no papel do usuário
-            if (userData.user && (userData.user.roles.includes('admin') || userData.user.email === 'admin@eventdev.com')) {
-              window.location.href = '/admin'
-            } else if (userData.user && userData.user.roles.includes('community')) {
-              window.location.href = '/'
-            } else {
-              window.location.href = '/eventos'
-            }
-          } else {
-            // Fallback se não conseguir buscar dados do usuário
-            window.location.href = '/eventos'
-          }
-        } catch (error) {
-          console.error('Erro ao buscar dados do usuário:', error)
+        // Redirecionar baseado no papel do usuário
+        if (userData.user && (userData.user.roles.includes('admin') || userData.user.email === 'admin@eventdev.org')) {
+          window.location.href = '/admin'
+        } else if (userData.user && userData.user.roles.includes('community')) {
+          window.location.href = '/'
+        } else {
           window.location.href = '/eventos'
         }
-      } else if (response.status === 'WRONG_CREDENTIALS_ERROR') {
-        setMessage({ type: 'error', text: 'Email ou senha incorretos' })
       } else {
         setMessage({ type: 'error', text: 'Erro no login. Tente novamente.' })
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Erro de conexão com o servidor' })
+      // O erro lançado pelo signIn já contém a mensagem do backend se disponível
+      const errorMessage = err.message || 'Erro de conexão com o servidor'
+      setMessage({ type: 'error', text: errorMessage })
       console.error('Login error:', err)
     } finally {
       setLoading(false)
@@ -80,20 +61,22 @@ export default function FormLogin() {
   return (
     <Box
       className={styles.container}
-      component='form'
+      component="form"
       onSubmit={handleSubmit}
       noValidate
-      autoComplete='on'>
+      autoComplete="on">
       <div className={styles.titleContainer}>
         <Typography
-          variant='h2'
-          component='h2'
+          variant="h2"
+          component="h2"
           sx={{ marginBottom: '1rem' }}>
-          Bem vindo ao <span className={styles.gradientText}>EVENT DEV</span>
+          Bem vindo ao
+          {' '}
+          <span className={styles.gradientText}>EVENT DEV</span>
         </Typography>
         <Typography
-          variant='body1'
-          component='p'
+          variant="body1"
+          component="p"
           sx={{ color: '#64748B' }}>
           Entre na sua conta agora e comece a criar seus eventos.
         </Typography>
@@ -108,65 +91,89 @@ export default function FormLogin() {
       )}
 
       <div className={styles.formContainer}>
-        <Typography
-          component='label'
-          htmlFor='email'
-          variant='subtitle1'
-          fontWeight='bold'
-          sx={{ marginTop: '1rem' }}>
-          Email
-        </Typography>
         <TextField
+          margin="normal"
           required
-          id='email'
-          placeholder='seu@email.com'
-          name='email'
-          autoComplete='email'
-          type='email'
-          sx={{ width: '100%' }}
-        />
-        <Typography
-          component='label'
-          htmlFor='password'
-          variant='subtitle1'
-          fontWeight='bold'
-          sx={{ marginTop: '1rem' }}>
-          Senha
-        </Typography>
+          fullWidth
+          id="email"
+          label="Email"
+          name="email"
+          autoComplete="email"
+          autoFocus
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: '#E2E8F0' },
+              '&:hover fieldset': { borderColor: '#FC692D' },
+              '&.Mui-focused fieldset': { borderColor: '#FC692D' }
+            }
+          }} />
         <TextField
-          id='password'
-          placeholder='********'
-          name='password'
-          type='password'
-          autoComplete='current-password'
-        />
+          margin="normal"
+          required
+          fullWidth
+          name="password"
+          label="Senha"
+          type="password"
+          id="password"
+          autoComplete="current-password"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: '#E2E8F0' },
+              '&:hover fieldset': { borderColor: '#FC692D' },
+              '&.Mui-focused fieldset': { borderColor: '#FC692D' }
+            }
+          }} />
+
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          className={styles.btn}
+          disabled={loading}>
+          {loading
+            ? (
+                <CircularProgress
+                  size={24}
+                  color="inherit" />
+              )
+            : (
+                'ENTRAR'
+              )}
+        </Button>
       </div>
-      <Button
-        sx={{ marginTop: '1rem', width: '100%' }}
-        type='submit'
-        variant='contained'
-        disabled={loading}>
-        {loading ? <CircularProgress size={24} /> : 'Entrar'}
-      </Button>
+
       <Typography
-        variant='body2'
-        component='p'
-        sx={{ marginTop: '1rem', textAlign: 'center' }}
-        underline='hover'>
-        Esqueceu a senha?{' '}
+        variant="body1"
+        component="p"
+        sx={{ marginTop: '1.5rem', color: '#64748B', fontSize: '0.95rem', textAlign: 'center' }}>
+        Esqueceu a senha?
+        {' '}
         <Link
-          href='/reset-password'
-          underline='hover'
-          color='text.secondary'
-          display='block'
+          href="/recuperar-senha"
+          underline="hover"
+          color="text.secondary"
           sx={{ color: '#FC692D', textDecoration: 'none', fontWeight: 'bold' }}>
           Redefinir Senha
         </Link>
       </Typography>
+
       <Typography
-        variant='body1'
-        component='p'
-        sx={{ marginTop: '1.5rem', color: '#64748B', fontSize: '1.20rem' }}>
+        variant="body1"
+        component="p"
+        sx={{ marginTop: '1.5rem', color: '#64748B', fontSize: '0.95rem', textAlign: 'center' }}>
+        Não tem uma conta?
+        {' '}
+        <Link
+          href="/registrar"
+          underline="hover"
+          sx={{ color: '#FC692D', fontWeight: 'bold' }}>
+          Cadastre-se
+        </Link>
+      </Typography>
+      <Typography
+        variant="body1"
+        component="p"
+        sx={{ marginTop: '1.5rem', color: '#64748B', fontSize: '0.85rem', textAlign: 'center' }}>
         Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade.
       </Typography>
     </Box>

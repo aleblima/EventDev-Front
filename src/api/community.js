@@ -1,29 +1,32 @@
-import { API_BASE_URL } from '../config/api'
+import { API_BASE_URL } from '@/config/api'
 
-const generateSlug = (name) => {
-  if (!name) return ''
+function generateSlug(name) {
+  if (!name) {
+    return ''
+  }
   return name
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036F]/g, '')
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-')
 }
 
-export const getCommunities = async () => {
-  const response = await fetch(`${API_BASE_URL}/community`, {
+export async function getCommunities() {
+  const response = await fetch(`${API_BASE_URL}/communities`, {
     credentials: 'include'
   })
   if (!response.ok) {
     throw new Error('Network response was not ok')
   }
-  return response.json()
+  const data = await response.json()
+  return data.data || data
 }
 
-export const getUserCommunity = async () => {
+export async function getUserCommunity() {
   try {
-    const response = await fetch(`${API_BASE_URL}/community/my-community`, {
+    const response = await fetch(`${API_BASE_URL}/communities/me`, {
       credentials: 'include' // Inclui cookies de sessão
     })
 
@@ -44,8 +47,8 @@ export const getUserCommunity = async () => {
   }
 }
 
-export const getCommunityById = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/community/${id}`, {
+export async function getCommunityById(id) {
+  const response = await fetch(`${API_BASE_URL}/communities/${id}`, {
     credentials: 'include'
   })
   if (!response.ok) {
@@ -54,7 +57,7 @@ export const getCommunityById = async (id) => {
   return response.json()
 }
 
-export const getCommunityBySlug = async (slug) => {
+export async function getCommunityBySlug(slug) {
   try {
     const response = await fetch(`${API_BASE_URL}/community`, {
       credentials: 'include'
@@ -66,14 +69,20 @@ export const getCommunityBySlug = async (slug) => {
     const allCommunities = await response.json()
 
     let community = allCommunities.find((c) => c.slug === slug)
-    if (community) return community
+    if (community) {
+      return community
+    }
 
     community = allCommunities.find((c) => generateSlug(c.name) === slug)
-    if (community) return community
+    if (community) {
+      return community
+    }
 
-    if (!isNaN(slug)) {
-      community = allCommunities.find((c) => c.id === slug || c.id === parseInt(slug))
-      if (community) return community
+    if (!Number.isNaN(Number(slug))) {
+      community = allCommunities.find((c) => c.id === slug || c.id === Number.parseInt(slug))
+      if (community) {
+        return community
+      }
     }
 
     const normalizedSlug = slug.replace(/-/g, ' ').toLowerCase()
@@ -85,7 +94,9 @@ export const getCommunityBySlug = async (slug) => {
   }
 }
 
-export const createCommunity = async (communityData, authToken) => {
+function createPayload(communityData) {
+  const logoUrl = typeof communityData.logo_url === 'string' ? communityData.logo_url : communityData.logo_url?.url || ''
+
   const payload = {
     name: communityData.nome,
     description: communityData.descricao || '',
@@ -94,7 +105,7 @@ export const createCommunity = async (communityData, authToken) => {
     link_instagram: communityData.link_instagram || '',
     link_linkedin: communityData.link_linkedin || '',
     link_github: communityData.link_github || '',
-    logo_url: typeof communityData.logo_url === 'string' ? communityData.logo_url : communityData.logo_url?.url || '',
+    logo_url: logoUrl,
     is_active: true
   }
 
@@ -105,12 +116,18 @@ export const createCommunity = async (communityData, authToken) => {
     }
   })
 
+  return payload
+}
+
+export async function createCommunity(communityData, authToken) {
+  const payload = createPayload(communityData)
+
   const headers = { 'Content-Type': 'application/json' }
   if (authToken) {
     headers.Authorization = `Bearer ${authToken}`
   }
 
-  const response = await fetch(`${API_BASE_URL}/community`, {
+  const response = await fetch(`${API_BASE_URL}/communities`, {
     method: 'POST',
     headers,
     credentials: 'include', // Para incluir cookies de sessão do SuperTokens
@@ -126,38 +143,26 @@ export const createCommunity = async (communityData, authToken) => {
   return response.json()
 }
 
-export const updateCommunity = async (id, communityData) => {
-  const payload = {
-    name: communityData.nome,
-    email: communityData.email,
-    description: communityData.descricao || '',
-    phone: communityData.telefone || '',
-    link_website: communityData.link_website?.trim() || null,
-    link_instagram: communityData.link_instagram?.trim() || null,
-    link_linkedin: communityData.link_linkedin?.trim() || null,
-    link_github: communityData.link_github?.trim() || null,
-    logo_url: typeof communityData.logo_url === 'string' ? communityData.logo_url : communityData.logo_url?.url || null,
-    updated_at: new Date().toISOString()
-  }
-
-  const response = await fetch(`${API_BASE_URL}/community/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+export async function updateCommunity(id, communityData) {
+  const response = await fetch(`${API_BASE_URL}/communities/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     credentials: 'include',
-    body: JSON.stringify(payload)
+    body: JSON.stringify(communityData)
   })
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('Erro da API:', errorText)
     throw new Error(`Erro ${response.status}: ${errorText}`)
   }
 
   return response.json()
 }
 
-export const deleteCommunity = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/community/${id}`, {
+export async function deleteCommunity(id) {
+  const response = await fetch(`${API_BASE_URL}/communities/${id}`, {
     method: 'DELETE',
     credentials: 'include'
   })
@@ -165,6 +170,5 @@ export const deleteCommunity = async (id) => {
   if (!response.ok) {
     throw new Error('Erro ao excluir comunidade')
   }
-
   return true
 }

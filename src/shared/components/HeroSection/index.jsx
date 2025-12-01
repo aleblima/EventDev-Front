@@ -1,9 +1,10 @@
-import eventImg from '@/shared/assets/static/images/event-img.png'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
-import { useAuth } from '../../providers/useAuth'
+
+import eventImg from '@/shared/assets/static/images/event-img.png'
+import { useAuth } from '@/shared/providers/useAuth'
 
 export default function HeroSection() {
   const { isAuthenticated, user } = useAuth()
@@ -18,7 +19,7 @@ export default function HeroSection() {
         paddingBottom: '4rem',
         minHeight: '10vh'
       }}>
-      <Container maxWidth='xl'>
+      <Container maxWidth="xl">
         <Box
           sx={{
             display: 'flex',
@@ -28,7 +29,7 @@ export default function HeroSection() {
           }}>
           <Box sx={{ flex: 1, maxWidth: '600px' }}>
             <Typography
-              variant='h1'
+              variant="h1"
               sx={{
                 color: 'white',
                 fontSize: '55px',
@@ -37,19 +38,21 @@ export default function HeroSection() {
                 marginBottom: '1rem',
                 textAlign: { xs: 'left', md: 'left' }
               }}>
-              Conecte-se <br />
-              com as melhores comunidades dev
+              Conecte-se
+              {' '}
+              <br />
+              com as melhores comunidades tech
             </Typography>
 
             <Typography
-              variant='h5'
+              variant="h5"
               sx={{
                 color: 'white',
                 fontWeight: '300',
                 marginBottom: '2.35rem',
                 maxWidth: '500px'
               }}>
-              Descubra, participe e crie eventos incríveis com comunidades de desenvolvedores do Nordeste.
+              Descubra, participe e crie eventos incríveis.
             </Typography>
 
             <Box
@@ -62,10 +65,10 @@ export default function HeroSection() {
                 justifyContent: { xs: 'center', md: 'start' }
               }}>
               <Button
-                href='/eventos'
-                variant='contained'
-                color='primary'
-                size='large'
+                href="/eventos"
+                variant="contained"
+                color="primary"
+                size="large"
                 sx={{
                   height: { xs: 60, md: 'auto' },
                   width: { xs: '100%', md: 'auto' }
@@ -75,10 +78,10 @@ export default function HeroSection() {
 
               {isAuthenticated && isCommunityUser && comunidadeId && (
                 <Button
-                  href={`/criacao-de-eventos/${comunidadeId}`}
-                  variant='contained'
-                  color='secondary'
-                  size='large'
+                  href={`/minha-comunidade/${comunidadeId}/eventos/novo`}
+                  variant="contained"
+                  color="secondary"
+                  size="large"
                   sx={{
                     fontWeight: '700',
                     height: { xs: 60, md: 'auto' },
@@ -97,14 +100,13 @@ export default function HeroSection() {
               justifyContent: { xs: 'center', md: 'end' }
             }}>
             <Box
-              component='img'
+              component="img"
               src={eventImg}
-              alt='Evento'
+              alt="Evento"
               sx={{
                 borderRadius: '10px',
                 width: { xs: '100%', md: '80%' }
-              }}
-            />
+              }} />
           </Box>
         </Box>
       </Container>

@@ -1,22 +1,23 @@
 import Box from '@mui/material/Box'
-import Container from '@mui/material/Container'
-import HeroSection from '@/shared/components/HeroSection'
-import CallToAction from '@/shared/components/CallToAction'
-import SectionHeader from '@/shared/components/SectionHeader'
-import EventViewToggle from '@/shared/components/EventViewToggle'
-import CardEventGroup from '@/shared/components/CardEvent/CardEventGroup'
-import FeaturedCardGroup from '@/shared/components/FeaturedCard/FeaturedCardGroup'
-import { useContext, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import CircularProgress from '@mui/material/CircularProgress'
+import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
-import { getCommunities } from '../api/community'
-import { getEvents } from '../api/event'
-import { AuthContext } from '../shared/providers/AuthContext'
+import { useQuery } from '@tanstack/react-query'
+import { use, useMemo, useState } from 'react'
+
+import { getCommunities } from '@/api/community'
+import { getEvents } from '@/api/event'
+import CallToAction from '@/shared/components/CallToAction'
+import CardEventGroup from '@/shared/components/CardEvent/CardEventGroup'
+import EventViewToggle from '@/shared/components/EventViewToggle'
+import FeaturedCardGroup from '@/shared/components/FeaturedCard/FeaturedCardGroup'
+import HeroSection from '@/shared/components/HeroSection'
+import SectionHeader from '@/shared/components/SectionHeader'
+import { AuthContext } from '@/shared/providers/AuthContext'
 
 export default function Home() {
-  const { user } = useContext(AuthContext)
-  const [eventType, setEventType] = useState('todos')
+  const { user } = use(AuthContext)
+  const [eventType, setEventType] = useState('proximos')
 
   const {
     data: comunidades,
@@ -33,24 +34,31 @@ export default function Home() {
     error: errorEventos
   } = useQuery({
     queryKey: ['eventos'],
-    queryFn: getEvents
+    queryFn: () => getEvents()
   })
 
   const isLoading = isLoadingComunidades || isLoadingEventos
   const error = errorComunidades || errorEventos
 
   const sortedFutureEvents = useMemo(() => {
-    if (!eventos) return []
+    if (!eventos) {
+      return []
+    }
 
-    const now = new Date()
+    // const now = new Date()
 
-    return eventos
+    const uniqueCommunityEvents = []
+    const seenCommunities = new Set()
+
+    const filteredSortedEvents = eventos
       .filter((evento) => {
-        const start = new Date(evento.start_date_time)
-        if (isNaN(start) || start < now) return false // ignora inválidos e passados
+        // const start = new Date(evento.start_date_time)
+        // if (Number.isNaN(start.getTime()) || start < now) {
+        //   return false
+        // } // ignora inválidos e passados
 
         if (eventType === 'online') {
-          return evento.modality === 'online' || evento.modality === 'hybrid'
+          return evento.modalidade === 'online' || evento.modalidade === 'hybrid'
         }
 
         return true
@@ -58,6 +66,16 @@ export default function Home() {
       .sort((a, b) => {
         return new Date(a.start_date_time) - new Date(b.start_date_time)
       })
+
+    for (const evento of filteredSortedEvents) {
+      const communityId = evento.community?.id || evento.community_id
+      if (communityId && !seenCommunities.has(communityId)) {
+        uniqueCommunityEvents.push(evento)
+        seenCommunities.add(communityId)
+      }
+    }
+
+    return uniqueCommunityEvents
   }, [eventos, eventType])
 
   if (isLoading) {
@@ -82,13 +100,14 @@ export default function Home() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          height: '50dvh',
+          textAlign: 'center',
           backgroundColor: 'white'
         }}>
         <Typography
-          variant='h6'
-          color='error'>
-          An error has occurred: {error.message}
+          variant="h6"
+          color="error">
+          Ajustando as engrenagens... Voltamos em breve.
         </Typography>
       </Box>
     )
@@ -97,32 +116,28 @@ export default function Home() {
   return (
     <Box sx={{ paddingTop: '4.5rem' }}>
       <HeroSection comunidadeId={user?.comunidade_id} />
-      <Container maxWidth='xl'>
+      <Container maxWidth="xl">
         <SectionHeader
-          title='Eventos em Destaque'
-          subtitle='Descubra os próximos eventos das comunidades.'
-          link='/eventos'
-          linkText='Ver todos os eventos'
-        />
+          title="Eventos em Destaque"
+          subtitle="Descubra os próximos eventos das comunidades."
+          link="/eventos"
+          linkText="Ver todos os eventos" />
         <EventViewToggle
           eventType={eventType}
-          setEventType={setEventType}
-        />
+          setEventType={setEventType} />
         <CardEventGroup eventos={sortedFutureEvents?.slice(0, 4)} />
         <SectionHeader
-          title='Comunidades em Destaque'
-          subtitle='Conheça as comunidades dev mais ativas da plataforma'
-          link='/comunidades'
-          linkText='Ver todas as Comunidades'
-        />
+          title="Comunidades em Destaque"
+          subtitle="Conheça as comunidades dev mais ativas da plataforma"
+          link="/comunidades"
+          linkText="Ver todas as Comunidades" />
         <FeaturedCardGroup comunidades={comunidades} />
       </Container>
       <CallToAction
-        title='Crie seu próprio evento'
+        title="Crie seu próprio evento"
         subtitles={['Tem uma ideia para um evento na sua comunidade dev?', 'Crie e compartilhe agora mesmo!']}
-        buttonText='Começar agora'
-        link='/eventos'
-      />
+        buttonText="Começar agora"
+        link="/eventos" />
     </Box>
   )
 }

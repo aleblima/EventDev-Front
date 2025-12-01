@@ -1,7 +1,6 @@
-import { capitalize } from '@mui/material/utils'
-
 import Box from '@mui/material/Box'
 import Switch from '@mui/material/Switch'
+import { capitalize } from '@mui/material/utils'
 
 import { UseTheme } from '@/shared/providers/ThemeProvider'
 
@@ -14,8 +13,7 @@ export default function ThemeToggle(props) {
       <span>{`${capitalize(theme)} Mode`}</span>
       <Switch
         checked={theme === 'dark'}
-        onChange={toggleTheme}
-      />
+        onChange={toggleTheme} />
     </Box>
   )
 }

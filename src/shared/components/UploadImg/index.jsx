@@ -1,11 +1,9 @@
-import { useState } from 'react'
-
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import { useState } from 'react'
 
 export default function UploadImg({ onImageUpload }) {
   const [logoUrl, setLogoUrl] = useState('')
@@ -13,9 +11,11 @@ export default function UploadImg({ onImageUpload }) {
   const [urlError, setUrlError] = useState('')
 
   const validateUrl = (url) => {
-    if (!url) return ''
+    if (!url) {
+      return ''
+    }
 
-    const urlPattern = new RegExp('^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$')
+    const urlPattern = /^https?:\/\/(?:www\.)?[-\w@:%.+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-\w()@:%+.~#?&/=]*$/
 
     if (!urlPattern.test(url)) {
       return 'URL inválida. Use formato: https://exemplo.com'
@@ -35,7 +35,7 @@ export default function UploadImg({ onImageUpload }) {
         setUrlError('')
 
         onImageUpload({
-          file: file,
+          file,
           url: URL.createObjectURL(file),
           name: file.name,
           size: file.size
@@ -63,15 +63,15 @@ export default function UploadImg({ onImageUpload }) {
   return (
     <Box sx={{ flex: 1, maxWidth: '100%' }}>
       <Typography
-        variant='subtitle1'
-        fontWeight='bold'
+        variant="subtitle1"
+        fontWeight="bold"
         sx={{ marginBottom: '0.5rem' }}>
         Logo da Comunidade
       </Typography>
 
       <Box
-        component='label'
-        htmlFor='fileUpload'
+        component="label"
+        htmlFor="fileUpload"
         sx={{
           border: '2px dashed #F87171',
           borderRadius: '8px',
@@ -89,39 +89,39 @@ export default function UploadImg({ onImageUpload }) {
         }}>
         <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
         <Typography>Clique para enviar uma imagem</Typography>
-        <Typography variant='caption'>PNG, JPG ou JPEG (máx. 5MB)</Typography>
+        <Typography variant="caption">PNG, JPG ou JPEG (máx. 5MB)</Typography>
         <input
-          id='fileUpload'
-          type='file'
-          accept='image/png, image/jpeg'
+          id="fileUpload"
+          type="file"
+          accept="image/png, image/jpeg"
           hidden
-          value=''
-          onChange={handleFileChange}
-        />
+          value=""
+          onChange={handleFileChange} />
       </Box>
 
       {fileName && (
         <Typography
-          variant='body2'
+          variant="body2"
           sx={{ mt: 1 }}>
-          Arquivo selecionado: <strong>{fileName}</strong>
+          Arquivo selecionado:
+          {' '}
+          <strong>{fileName}</strong>
         </Typography>
       )}
 
       <Divider sx={{ my: 3 }}>ou</Divider>
 
       <TextField
-        id='urlUpload'
+        id="urlUpload"
         fullWidth
-        placeholder='https://exemplo.com/logo.png'
+        placeholder="https://exemplo.com/logo.png"
         value={logoUrl}
         onChange={handleFileChange}
         error={!!urlError}
-        helperText={urlError}
-      />
+        helperText={urlError} />
 
       <Typography
-        variant='caption'
+        variant="caption"
         sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
         Você pode fornecer uma imagem do computador ou fornecer uma URL
       </Typography>

@@ -1,16 +1,16 @@
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
-import Link from '@mui/material/Link'
-import Divider from '@mui/material/Divider'
 import GitHub from '@mui/icons-material/GitHub'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import LinkedIn from '@mui/icons-material/LinkedIn'
 import Instagram from '@mui/icons-material/Instagram'
+import WhatsApp from '@mui/icons-material/WhatsApp'
+import Box from '@mui/material/Box'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
+import Link from '@mui/material/Link'
+import Typography from '@mui/material/Typography'
 
-import logo from '@/shared/assets/static/images/logo.png'
-import logoGeracao from '@/shared/assets/static/images/geracao-tech.png'
 import logoDigital from '@/shared/assets/static/images/digital-college.png'
+import logoGeracao from '@/shared/assets/static/images/geracao-tech.png'
+import logo from '@/shared/assets/static/images/logo.png'
 
 export default function Footer() {
   return (
@@ -32,41 +32,40 @@ export default function Footer() {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 4 }}>
               <Box sx={{ flex: 1, maxWidth: '400px' }}>
                 <Box sx={{ mb: 2 }}>
-                  <Link href='/'>
+                  <Link href="/">
                     <img
                       src={logo}
                       width={180}
-                      alt='Logo EventDev'
-                    />
+                      alt="Logo EventDev" />
                   </Link>
                 </Box>
                 <Typography
-                  variant='body2'
-                  color='text.secondary'>
+                  variant="body2"
+                  color="text.secondary">
                   Conectando comunidades de desenvolvedores do nordeste através de eventos incríveis. Encontre eventos, crie sua comunidade e faça
                   parte deste ecossistema.
                 </Typography>
               </Box>
               <Box sx={{ minWidth: '120px' }}>
                 <Typography
-                  variant='subtitle2'
-                  fontWeight='bold'
+                  variant="subtitle2"
+                  fontWeight="bold"
                   sx={{ mb: 1 }}>
                   Navegue
                 </Typography>
                 <Link
-                  href='/eventos'
-                  underline='hover'
-                  color='text.secondary'
-                  display='block'
+                  href="/eventos"
+                  underline="hover"
+                  color="text.secondary"
+                  display="block"
                   sx={{ mb: 1 }}>
                   Eventos
                 </Link>
                 <Link
-                  href='/comunidades'
-                  underline='hover'
-                  color='text.secondary'
-                  display='block'
+                  href="/comunidades"
+                  underline="hover"
+                  color="text.secondary"
+                  display="block"
                   sx={{ mb: 1 }}>
                   Comunidades
                 </Link>
@@ -81,33 +80,31 @@ export default function Footer() {
               minWidth: '200px'
             }}>
             <Typography
-              variant='subtitle2'
-              fontWeight='bold'
+              variant="subtitle2"
+              fontWeight="bold"
               sx={{ mb: 1 }}>
               Apoio
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 8 }}>
               <Link
-                href='https://geracaotech.iel-ce.org.br/'
-                target='_blank'
-                rel='noopener noreferrer'
+                href="https://geracaotech.iel-ce.org.br/"
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{ maxWidth: 130 }}>
                 <img
                   src={logoGeracao}
-                  alt='Geração Tech 2.0'
-                  style={{ width: '100%', height: 'auto' }}
-                />
+                  alt="Geração Tech 2.0"
+                  style={{ width: '100%', height: 'auto' }} />
               </Link>
               <Link
-                href='https://digitalcollege.com.br/'
-                target='_blank'
-                rel='noopener noreferrer'
+                href="https://digitalcollege.com.br/"
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{ maxWidth: 130 }}>
                 <img
                   src={logoDigital}
-                  alt='Digital College'
-                  style={{ width: '100%', height: 'auto' }}
-                />
+                  alt="Digital College"
+                  style={{ width: '100%', height: 'auto' }} />
               </Link>
             </Box>
           </Box>
@@ -119,44 +116,46 @@ export default function Footer() {
       <Box sx={{ margin: '0 auto' }}>
         <Grid
           container
-          justifyContent='space-between'
-          alignItems='center'>
+          justifyContent="space-between"
+          alignItems="center">
           <Grid>
             <Typography
-              variant='body2'
-              color='text.secondary'>
-              Built with 💙 by the{' '}
+              variant="body2"
+              color="text.secondary">
+              Built with 💙 by the
+              {' '}
               <Link
-                href='#'
-                underline='hover'
-                color='primary'>
+                href=""
+                underline="hover"
+                color="primary">
                 EventDev
-              </Link>{' '}
+              </Link>
+              {' '}
               community.
             </Typography>
           </Grid>
           <Grid>
             <Box>
               <IconButton
-                href='https://www.instagram.com/eventdevcommunities'
-                target='_blank'
-                size='small'
-                rel='noopener noreferrer'>
+                href="https://www.instagram.com/eventdev.ce"
+                target="_blank"
+                size="small"
+                rel="noopener noreferrer">
                 <Instagram />
               </IconButton>
               <IconButton
-                href='https://github.com/mathewvieira/Event-Dev-Communities'
-                target='_blank'
-                size='small'
-                rel='noopener noreferrer'>
+                href="https://github.com/EventDev-Communities"
+                target="_blank"
+                size="small"
+                rel="noopener noreferrer">
                 <GitHub />
               </IconButton>
               <IconButton
-                href='https://linkedin.com'
-                target='_blank'
-                size='small'
-                rel='noopener noreferrer'>
-                <LinkedIn />
+                href="https://chat.whatsapp.com/LEjECdsm9iXAIqnECfJ8Q0"
+                target="_blank"
+                size="small"
+                rel="noopener noreferrer">
+                <WhatsApp />
               </IconButton>
             </Box>
           </Grid>

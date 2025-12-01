@@ -1,93 +1,137 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import * as reactRouterDom from 'react-router-dom'
+import { SuperTokensWrapper } from 'supertokens-auth-react'
+import { EmailPasswordPreBuiltUI } from 'supertokens-auth-react/recipe/emailpassword/prebuiltui'
+import { getSuperTokensRoutesForReactRouterDom } from 'supertokens-auth-react/ui'
 
-import Home from '@/pages/Home'
-import Login from '@/pages/Login'
-import ResetPassword from '@/pages/ResetPassword'
-import AdminPanel from '@/pages/AdminPanel'
-import Events from '@/pages/Events'
-import CreateEvent from '@/pages/CreateEvent'
-import Communities from '@/pages/Communities'
-import CommunityRegister from '@/pages/CommunityRegister'
-import Navbar from '@/shared/components/Navbar'
 import Footer from '@/shared/components/Footer'
-import CommunityProfile from './pages/CommunityProfile'
-import PageNotFound from './pages/PageNotFound'
-import CommunityEdit from './pages/CommunityEdit'
-import EditEvent from './pages/EditEvent'
+import Navbar from '@/shared/components/Navbar'
+import ProtectedRoute from '@/shared/components/ProtectedRoute'
+import AuthProvider from '@/shared/providers/AuthContext'
 
-import { initSuperTokens } from './config/supertokens'
-import AuthProvider from './shared/providers/AuthContext'
-import ProtectedRoute from './shared/components/ProtectedRoute'
-
-// Inicializar SuperTokens antes de qualquer componente
-initSuperTokens()
+// Lazy imports
+const Home = lazy(() => import('@/pages/Home'))
+const Login = lazy(() => import('@/pages/Login'))
+const Register = lazy(() => import('@/pages/Register'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
+const AdminPanel = lazy(() => import('@/pages/AdminPanel'))
+const Events = lazy(() => import('@/pages/Events'))
+const CreateEvent = lazy(() => import('@/pages/CreateEvent'))
+const Communities = lazy(() => import('@/pages/Communities'))
+const CommunityRegister = lazy(() => import('@/pages/CommunityRegister'))
+const CommunityProfile = lazy(() => import('@/pages/CommunityProfile'))
+const PageNotFound = lazy(() => import('@/pages/PageNotFound'))
+const CommunityEdit = lazy(() => import('@/pages/CommunityEdit'))
+const EditEvent = lazy(() => import('@/pages/EditEvent'))
+const EventDetails = lazy(() => import('@/pages/EventDetails'))
+const MyTickets = lazy(() => import('@/pages/MyTickets'))
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Navbar />
-        <Routes>
-          <Route
-            path='/'
-            element={<Home />}
-          />
-          <Route
-            path='/eventos'
-            element={<Events />}
-          />
-          <Route
-            path='/comunidades'
-            element={<Communities />}
-          />
-          <Route
-            path='/login'
-            element={<Login />}
-          />
-          <Route
-            path='/reset-password'
-            element={<ResetPassword />}
-          />
-          <Route
-            path='/admin'
-            element={
-              <ProtectedRoute roles={['admin']}>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/cadastro-comunidade'
-            element={<CommunityRegister />}
-          />
-          <Route
-            path='/meu-perfil/:communityId'
-            element={<CommunityProfile isOwner={true} />}
-          />
-          <Route
-            path='comunidade/editar-perfil/:communityId'
-            element={<CommunityEdit />}
-          />
-          <Route
-            path='/criacao-de-eventos/:comunidadeId'
-            element={<CreateEvent />}
-          />
-          <Route
-            path='/editar-evento/:eventoId'
-            element={<EditEvent />}
-          />
-          <Route
-            path='/perfil-comunidade/:communityId'
-            element={<CommunityProfile />}
-          />
-          <Route
-            path='*'
-            element={<PageNotFound />}
-          />
-        </Routes>
+    <SuperTokensWrapper>
+      <AuthProvider>
+        <BrowserRouter>
+          <Navbar />
+          <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>Carregando...</div>}>
+            <Routes>
+              {/* SuperTokens Routes */}
+              {getSuperTokensRoutesForReactRouterDom(reactRouterDom, [EmailPasswordPreBuiltUI])}
 
-        <Footer />
-      </BrowserRouter>
-    </AuthProvider>
+              {/* Public Routes */}
+              <Route
+                path="/"
+                element={<Home />} />
+              <Route
+                path="/eventos"
+                element={<Events />} />
+              <Route
+                path="/eventos/:eventId"
+                element={<EventDetails />} />
+              <Route
+                path="/comunidades"
+                element={<Communities />} />
+              <Route
+                path="/login"
+                element={<Login />} />
+              <Route
+                path="/registrar"
+                element={<Register />} />
+              <Route
+                path="/recuperar-senha"
+                element={<ResetPassword />} />
+              <Route
+                path="/comunidades/:communityId"
+                element={<CommunityProfile />} />
+
+              {/* Protected Routes - Admin */}
+              <Route
+                path="/admin"
+                element={(
+                  <ProtectedRoute roles={['admin']}>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                )} />
+
+              {/* Protected Routes - Community Owner */}
+              <Route
+                path="/minha-comunidade/:communityId"
+                element={(
+                  <ProtectedRoute roles={['community']}>
+                    <CommunityProfile isOwner={true} />
+                  </ProtectedRoute>
+                )} />
+
+              <Route
+                path="/minha-comunidade/:communityId/editar"
+                element={(
+                  <ProtectedRoute roles={['community']}>
+                    <CommunityEdit />
+                  </ProtectedRoute>
+                )} />
+
+              <Route
+                path="/minha-comunidade/:comunidadeId/eventos/novo"
+                element={(
+                  <ProtectedRoute roles={['community']}>
+                    <CreateEvent />
+                  </ProtectedRoute>
+                )} />
+
+              <Route
+                path="/eventos/:eventoId/editar"
+                element={(
+                  <ProtectedRoute roles={['community']}>
+                    <EditEvent />
+                  </ProtectedRoute>
+                )} />
+
+              {/* Protected Routes - Authenticated Users (Any role) */}
+              <Route
+                path="/meus-ingressos"
+                element={(
+                  <ProtectedRoute>
+                    <MyTickets />
+                  </ProtectedRoute>
+                )} />
+
+              <Route
+                path="/comunidades/nova"
+                element={(
+                  <ProtectedRoute>
+                    <CommunityRegister />
+                  </ProtectedRoute>
+                )} />
+
+              {/* 404 */}
+              <Route
+                path="*"
+                element={<PageNotFound />} />
+            </Routes>
+          </Suspense>
+          <Footer />
+        </BrowserRouter>
+      </AuthProvider>
+    </SuperTokensWrapper>
   )
 }

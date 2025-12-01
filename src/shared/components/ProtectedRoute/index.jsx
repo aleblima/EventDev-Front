@@ -1,7 +1,8 @@
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '@/shared/providers/useAuth'
-import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import { Navigate } from 'react-router-dom'
+
+import { useAuth } from '@/shared/providers/useAuth'
 
 export default function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, user, loading } = useAuth()
@@ -22,27 +23,29 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   // Se não estiver logado, redireciona para login
-  if (!isAuthenticated)
+  if (!isAuthenticated) {
     return (
       <Navigate
-        to='/login'
-        replace
-      />
+        to="/login"
+        replace />
     )
+  }
 
   // Se roles não foram definidas, só checa autenticação
-  if (!roles || roles.length === 0) return children
+  if (!roles || roles.length === 0) {
+    return children
+  }
 
   // Verifica se o usuário tem alguma das roles permitidas
   const hasAccess = user?.roles?.some((role) => roles.includes(role))
 
-  if (!hasAccess)
+  if (!hasAccess) {
     return (
       <Navigate
-        to='/'
-        replace
-      />
+        to="/"
+        replace />
     )
+  }
 
   return children
 }

@@ -1,10 +1,10 @@
-import notfound from '@/shared/assets/static/images/not-found.png'
-
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
 import { Link } from 'react-router-dom'
+
+import notfound from '@/shared/assets/static/images/not-found.png'
 
 export default function PageNotFound() {
   return (
@@ -29,7 +29,7 @@ export default function PageNotFound() {
             flex: 1
           }}>
           <Typography
-            variant='h1'
+            variant="h1"
             sx={{
               fontSize: { xs: '36px', sm: '48px', md: '64px', lg: '105px' },
               lineHeight: 1.2,
@@ -40,13 +40,15 @@ export default function PageNotFound() {
           </Typography>
 
           <Typography
-            variant='h4'
+            variant="h4"
             sx={{
               fontFamily: 'Inter',
               fontSize: { xs: '1.5rem', md: '2.125rem' },
               mb: { xs: 2, md: 2 }
             }}>
-            OOOps! <br />
+            OOOps!
+            {' '}
+            <br />
             Página não Encontrada
           </Typography>
 
@@ -57,15 +59,17 @@ export default function PageNotFound() {
               fontSize: '1rem',
               mb: { xs: 3, md: 4 }
             }}>
-            Esta página não existe ou foi removida! <br />
+            Esta página não existe ou foi removida!
+            {' '}
+            <br />
             Sugerimos que você volte para a página inicial.
           </Typography>
 
           <Button
             component={Link}
-            to='/'
-            variant='contained'
-            color='primary'
+            to="/"
+            variant="contained"
+            color="primary"
             sx={{
               px: { xs: 4, md: 6 },
               py: { xs: 1.5, md: 2 },
@@ -85,15 +89,14 @@ export default function PageNotFound() {
           }}>
           <img
             src={notfound}
-            alt='Page Not Found'
+            alt="Page Not Found"
             style={{
               maxWidth: '100%',
               height: 'auto',
               width: '80%',
               objectFit: 'contain',
               marginLeft: '70px'
-            }}
-          />
+            }} />
         </Box>
       </Box>
 
@@ -107,7 +110,7 @@ export default function PageNotFound() {
         <Typography
           component={Link}
           sx={{ color: '#B0B0B0', textDecoration: 'none', fontSize: '0.85rem' }}
-          to='https://www.figma.com/@thisuix571'>
+          to="https://www.figma.com/@thisuix571">
           Design by: Mohammed Jawed
         </Typography>
       </Box>

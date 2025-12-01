@@ -1,13 +1,15 @@
+import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import url from 'node:url'
-
-import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
+  root: 'src',
+  envDir: '..',
+  publicDir: '../public',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
@@ -23,15 +25,18 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
+    emptyOutDir: true,
     minify: 'esbuild',
     sourcemap: false,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material'],
-          router: ['react-router-dom']
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@emotion/react', '@emotion/styled'],
+          'supertokens-vendor': ['supertokens-auth-react'],
+          'utils-vendor': ['@tanstack/react-query', 'dayjs', 'zod', 'react-hook-form', '@hookform/resolvers']
         }
       }
     }

@@ -63,7 +63,6 @@ make dev-logs      # Ver logs
 1. Junte todos os commits (somente os seus) antes de "mandar para revisão":
 
    Ex: `git rebase -i HEAD~5`
-
    - Dica: HEAD~(número de commits que precisam ser mesclados)
 
 2. Após concluir o rebase iterativo, atualize SUA BRANCH com base na MAIN:

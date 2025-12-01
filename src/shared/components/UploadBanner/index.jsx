@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Divider from '@mui/material/Divider'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import Box from '@mui/material/Box'
+import Divider from '@mui/material/Divider'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 
 export default function BannerImg() {
   const [logoUrl, setLogoUrl] = useState('')
@@ -20,16 +20,16 @@ export default function BannerImg() {
   return (
     <Box sx={{ flex: 1, maxWidth: '100%' }}>
       <Typography
-        variant='subtitle1'
-        fontWeight='bold'
+        variant="subtitle1"
+        fontWeight="bold"
         sx={{ marginBottom: '0.5rem' }}>
         Imagem da Capa
       </Typography>
 
       {/* Área de upload */}
       <Box
-        component='label'
-        htmlFor='logoUpload'
+        component="label"
+        htmlFor="logoUpload"
         sx={{
           border: '2px dashed #F87171',
           borderRadius: '8px',
@@ -47,21 +47,22 @@ export default function BannerImg() {
         }}>
         <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
         <Typography>Clique para enviar uma imagem</Typography>
-        <Typography variant='caption'>PNG, JPG ou JPEG (máx. 5MB)</Typography>
+        <Typography variant="caption">PNG, JPG ou JPEG (máx. 5MB)</Typography>
         <input
-          type='file'
-          id='logoUpload'
-          accept='image/png, image/jpeg'
+          type="file"
+          id="logoUpload"
+          accept="image/png, image/jpeg"
           hidden
-          onChange={handleFileChange}
-        />
+          onChange={handleFileChange} />
       </Box>
 
       {fileName && (
         <Typography
-          variant='body2'
+          variant="body2"
           sx={{ mt: 1 }}>
-          Arquivo selecionado: <strong>{fileName}</strong>
+          Arquivo selecionado:
+          {' '}
+          <strong>{fileName}</strong>
         </Typography>
       )}
 
@@ -71,17 +72,16 @@ export default function BannerImg() {
       {/* Campo para URL da imagem */}
       <TextField
         fullWidth
-        placeholder='https://exemplo.com/capa.png'
+        placeholder="https://exemplo.com/capa.png"
         value={logoUrl}
         onChange={(e) => {
           setLogoUrl(e.target.value)
           setFileName(null)
-        }}
-      />
+        }} />
 
       {/* Nota explicativa */}
       <Typography
-        variant='caption'
+        variant="caption"
         sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
         Uma imagem atrativa para seu evento (formatos recomendados: jpg, png). Recomendamos usar imagens com tamanho e proporção semelhantes aos posts
         do Instagram para melhor visualização.

@@ -13,23 +13,20 @@ export default function SectionHeader(props) {
         justifyContent: 'space-between',
         display: { sm: 'block', md: 'flex' },
         textAlign: { xs: 'center', sm: 'center', md: 'left' }
-      }}
-    >
+      }}>
       <Box>
-        <Typography variant='h3'>{title}</Typography>
-        <Typography variant='subtitle1'>{subtitle}</Typography>
+        <Typography variant="h3">{title}</Typography>
+        <Typography variant="subtitle1">{subtitle}</Typography>
       </Box>
 
       <Box
         sx={{
           mt: { xs: '2rem', sm: '2rem', md: '0' }
-        }}
-      >
+        }}>
         <Link
           href={link}
-          variant='body2'
-          underline='hover'
-        >
+          variant="body2"
+          underline="hover">
           {linkText}
         </Link>
       </Box>

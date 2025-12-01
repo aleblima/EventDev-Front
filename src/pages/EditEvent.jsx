@@ -1,27 +1,62 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
-import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import InputLabel from '@mui/material/InputLabel'
-import FormControl from '@mui/material/FormControl'
 import Snackbar from '@mui/material/Snackbar'
-import Alert from '@mui/material/Alert'
+import Typography from '@mui/material/Typography'
+import { useEffect, useState } from 'react'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
+import { useNavigate, useParams } from 'react-router-dom'
+import { z } from 'zod'
 
-import TipCard from '@/shared/components/TipCard'
-import BannerImg from '@/shared/components/UploadBanner'
-import { getEvents, updateEvent } from '@/api/event'
 import { createEndereco, getEnderecoByCep, updateEndereco } from '@/api/address'
+import { getEventById, updateEvent } from '@/api/event'
+import EventFormFields from '@/shared/components/EventForm/EventFormFields'
+
+const FULL_WIDTH = { width: '100%' }
 
 const today = new Date().toISOString().split('T')[0]
+
+function validateTime(data, ctx) {
+  if (data.horarioInicial && data.horarioFinal) {
+    const [horaIni, minIni] = data.horarioInicial.split(':').map(Number)
+    const [horaFim, minFim] = data.horarioFinal.split(':').map(Number)
+    const inicialMinutos = horaIni * 60 + minIni
+    const finalMinutos = horaFim * 60 + minFim
+    if (inicialMinutos >= finalMinutos) {
+      ctx.addIssue({
+        path: ['horarioFinal'],
+        message: 'Horário final deve ser posterior ao horário inicial',
+        code: 'custom'
+      })
+    }
+  }
+}
+
+function validateAddress(data, ctx) {
+  if (data.modalidade && data.modalidade !== 'online') {
+    const requiredFields = ['cep', 'rua', 'numero', 'bairro', 'estado', 'cidade']
+    const fieldLabels = {
+      cep: 'CEP',
+      rua: 'Rua',
+      numero: 'Número',
+      bairro: 'Bairro',
+      estado: 'Estado',
+      cidade: 'Cidade'
+    }
+    requiredFields.forEach((field) => {
+      if (!data[field]) {
+        ctx.addIssue({ path: [field], message: `${fieldLabels[field]} obrigatório`, code: 'custom' })
+      }
+    })
+  }
+}
+
+function refineEventSchema(data, ctx) {
+  validateTime(data, ctx)
+  validateAddress(data, ctx)
+}
 
 const eventSchema = z
   .object({
@@ -42,31 +77,129 @@ const eventSchema = z
     cidade: z.string().optional(),
     link: z.string().url('Link deve ser uma URL válida').optional().or(z.literal(''))
   })
-  .superRefine((data, ctx) => {
-    // Validação de horário: inicial deve ser menor que final
-    if (data.horarioInicial && data.horarioFinal) {
-      const [horaIni, minIni] = data.horarioInicial.split(':').map(Number)
-      const [horaFim, minFim] = data.horarioFinal.split(':').map(Number)
-      const inicialMinutos = horaIni * 60 + minIni
-      const finalMinutos = horaFim * 60 + minFim
-      if (inicialMinutos >= finalMinutos) {
-        ctx.addIssue({
-          path: ['horarioFinal'],
-          message: 'Horário final deve ser posterior ao horário inicial',
-          code: 'custom'
-        })
+  .superRefine(refineEventSchema)
+
+function getSafeValue(val) {
+  return val || ''
+}
+
+function mapAddressToForm(endereco) {
+  return {
+    cep: getSafeValue(endereco?.cep),
+    rua: getSafeValue(endereco?.rua),
+    numero: getSafeValue(endereco?.numero),
+    bairro: getSafeValue(endereco?.bairro),
+    estado: getSafeValue(endereco?.estado),
+    cidade: getSafeValue(endereco?.cidade)
+  }
+}
+
+function mapEventToForm(evento) {
+  const { endereco } = evento
+  const [data, horaInicial] = (evento.data_hora_inicial || '').split('T')
+  const [, horaFinal] = (evento.data_hora_final || '').split('T')
+
+  return {
+    nomeEvento: getSafeValue(evento.titulo),
+    descricaoEvento: getSafeValue(evento.descricao),
+    data: getSafeValue(data),
+    horarioInicial: getSafeValue(horaInicial?.slice(0, 5)),
+    horarioFinal: getSafeValue(horaFinal?.slice(0, 5)),
+    modalidade: getSafeValue(evento.modalidade),
+    link: getSafeValue(evento.link),
+    ...mapAddressToForm(endereco)
+  }
+}
+
+async function loadEventData(eventoId, setEvento, setEnderecoId, reset, setSubmitError) {
+  try {
+    const eventoEncontrado = await getEventById(eventoId)
+    if (!eventoEncontrado) {
+      setSubmitError('Evento não encontrado')
+      return
+    }
+    setEvento(eventoEncontrado)
+    setEnderecoId(eventoEncontrado.id_endereco || null)
+
+    reset(mapEventToForm(eventoEncontrado))
+  } catch (err) {
+    setSubmitError('Erro ao carregar evento', err)
+  }
+}
+
+async function submitEventUpdate(data, eventoId, enderecoId, evento, setIsSubmitting, setSubmitError, setShowSuccessToast, navigate) {
+  setIsSubmitting(true)
+  setSubmitError('')
+
+  try {
+    const startDateTime = `${data.data}T${data.horarioInicial}:00`
+    const endDateTime = `${data.data}T${data.horarioFinal}:00`
+
+    let novoEnderecoId = enderecoId
+
+    if (data.modalidade !== 'online') {
+      const enderecoData = {
+        cep: data.cep.replace(/\D/g, ''),
+        rua: data.rua,
+        numero: data.numero,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado
+      }
+
+      if (enderecoId) {
+        await updateEndereco(enderecoId, enderecoData)
+      } else {
+        const novoEndereco = await createEndereco(enderecoData)
+        novoEnderecoId = novoEndereco.id
       }
     }
-    // Validação de endereço para modalidades não-online
-    if (data.modalidade && data.modalidade !== 'online') {
-      if (!data.cep) ctx.addIssue({ path: ['cep'], message: 'CEP obrigatório', code: 'custom' })
-      if (!data.rua) ctx.addIssue({ path: ['rua'], message: 'Rua obrigatória', code: 'custom' })
-      if (!data.numero) ctx.addIssue({ path: ['numero'], message: 'Número obrigatório', code: 'custom' })
-      if (!data.bairro) ctx.addIssue({ path: ['bairro'], message: 'Bairro obrigatório', code: 'custom' })
-      if (!data.estado) ctx.addIssue({ path: ['estado'], message: 'Estado obrigatório', code: 'custom' })
-      if (!data.cidade) ctx.addIssue({ path: ['cidade'], message: 'Cidade obrigatória', code: 'custom' })
+
+    const eventoAtualizado = {
+      titulo: data.nomeEvento,
+      descricao: data.descricaoEvento,
+      data_hora_inicial: startDateTime,
+      data_hora_final: endDateTime,
+      modalidade: data.modalidade,
+      link: data.link || null,
+      id_endereco: data.modalidade === 'online' ? null : novoEnderecoId
     }
-  })
+
+    await updateEvent(eventoId, eventoAtualizado)
+    setShowSuccessToast(true)
+    setTimeout(() => {
+      navigate(`/communities/${evento.id_comunidade}`)
+    }, 2000)
+  } catch (err) {
+    console.error('Erro ao atualizar evento:', err)
+    setSubmitError(err.message || 'Erro ao atualizar evento')
+  } finally {
+    setIsSubmitting(false)
+  }
+}
+
+async function fetchAddress(cep, setValue, setCepLoading, setCepError) {
+  if (!cep || cep.length < 8) {
+    return
+  }
+  setCepLoading(true)
+  setCepError('')
+  try {
+    const endereco = await getEnderecoByCep(cep.replace(/\D/g, ''))
+    setValue('rua', endereco.rua)
+    setValue('bairro', endereco.bairro)
+    setValue('cidade', endereco.cidade)
+    setValue('estado', endereco.estado)
+  } catch (err) {
+    setCepError('CEP não encontrado', err)
+    setValue('rua', '')
+    setValue('bairro', '')
+    setValue('cidade', '')
+    setValue('estado', '')
+  } finally {
+    setCepLoading(false)
+  }
+}
 
 export default function EditEvent() {
   const { eventoId } = useParams()
@@ -79,152 +212,53 @@ export default function EditEvent() {
   const [enderecoId, setEnderecoId] = useState(null)
   const navigate = useNavigate()
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-    reset,
-    control
-  } = useForm({
+  const methods = useForm({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       modalidade: ''
     }
   })
+  const { handleSubmit, setValue, reset, control } = methods
 
-  const watchedModalidade = watch('modalidade', '')
-  const watchedCep = watch('cep', '')
+  const watchedCep = useWatch({
+    control,
+    name: 'cep',
+    defaultValue: ''
+  })
 
   useEffect(() => {
-    async function fetchEvento() {
-      try {
-        const eventos = await getEvents()
-        const eventoEncontrado = eventos.find((e) => String(e.id) === String(eventoId))
-        if (!eventoEncontrado) {
-          setSubmitError('Evento não encontrado')
-          return
-        }
-        setEvento(eventoEncontrado)
-        setEnderecoId(eventoEncontrado.id_endereco || null)
-
-        // Preenche os campos do formulário
-        reset({
-          nomeEvento: eventoEncontrado.titulo || '',
-          descricaoEvento: eventoEncontrado.descricao || '',
-          data: eventoEncontrado.data_hora_inicial?.split('T')[0] || '',
-          horarioInicial: eventoEncontrado.data_hora_inicial?.split('T')[1]?.slice(0, 5) || '',
-          horarioFinal: eventoEncontrado.data_hora_final?.split('T')[1]?.slice(0, 5) || '',
-          modalidade: eventoEncontrado.modalidade || '',
-          cep: eventoEncontrado.endereco?.cep || '',
-          rua: eventoEncontrado.endereco?.rua || '',
-          numero: eventoEncontrado.endereco?.numero || '',
-          bairro: eventoEncontrado.endereco?.bairro || '',
-          estado: eventoEncontrado.endereco?.estado || '',
-          cidade: eventoEncontrado.endereco?.cidade || '',
-          link: eventoEncontrado.link || ''
-        })
-      } catch (err) {
-        setSubmitError('Erro ao carregar evento', err)
-      }
-    }
-    fetchEvento()
+    loadEventData(eventoId, setEvento, setEnderecoId, reset, setSubmitError)
   }, [eventoId, reset])
 
   const handleCepBlur = async () => {
-    if (!watchedCep || watchedCep.length < 8) return
-    setCepLoading(true)
-    setCepError('')
-    try {
-      const endereco = await getEnderecoByCep(watchedCep.replace(/\D/g, ''))
-      setValue('rua', endereco.rua)
-      setValue('bairro', endereco.bairro)
-      setValue('cidade', endereco.cidade)
-      setValue('estado', endereco.estado)
-    } catch (err) {
-      setCepError('CEP não encontrado', err)
-      setValue('rua', '')
-      setValue('bairro', '')
-      setValue('cidade', '')
-      setValue('estado', '')
-    } finally {
-      setCepLoading(false)
-    }
+    fetchAddress(watchedCep, setValue, setCepLoading, setCepError)
   }
 
   const onSubmit = async (data) => {
-    setIsSubmitting(true)
-    setSubmitError('')
-    try {
-      let enderecoAtualizado = enderecoId
-      if (data.modalidade !== 'online') {
-        const enderecoData = {
-          cep: data.cep || '',
-          rua: data.rua || '',
-          numero: data.numero || '',
-          bairro: data.bairro || '',
-          cidade: data.cidade || '',
-          estado: data.estado || ''
-        }
-        if (enderecoId) {
-          await updateEndereco(enderecoId, enderecoData)
-        } else {
-          const novoEndereco = await createEndereco(enderecoData)
-          enderecoAtualizado = novoEndereco.id
-        }
-      } else {
-        enderecoAtualizado = null
-      }
-
-      const eventoAtualizado = {
-        titulo: data.nomeEvento,
-        descricao: data.descricaoEvento,
-        data_hora_inicial: `${data.data}T${data.horarioInicial}:00`,
-        data_hora_final: `${data.data}T${data.horarioFinal}:00`,
-        modalidade: data.modalidade,
-        id_comunidade: evento?.id_comunidade,
-        id_endereco: enderecoAtualizado,
-        capa_url: evento?.capa_url || '',
-        link: data.link || '',
-        evento: true,
-        ativo: true,
-        atualizado_em: new Date().toISOString()
-      }
-
-      await updateEvent(eventoId, eventoAtualizado)
-      setShowSuccessToast(true)
-      setTimeout(() => {
-        navigate(`/meu-perfil/${evento?.comunidade?.slug}`)
-      }, 2000)
-    } catch (err) {
-      setSubmitError('Erro ao editar evento. Tente novamente.', err)
-    } finally {
-      setIsSubmitting(false)
-    }
+    submitEventUpdate(data, eventoId, enderecoId, evento, setIsSubmitting, setSubmitError, setShowSuccessToast, navigate)
   }
 
   if (!evento) {
     return (
-      <Container maxWidth='xl'>
+      <Container maxWidth="xl">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-          <Typography variant='h6'>Carregando evento...</Typography>
+          <Typography variant="h6">Carregando evento...</Typography>
         </Box>
       </Container>
     )
   }
 
   return (
-    <Container maxWidth='xl'>
+    <Container maxWidth="xl">
       <Box sx={{ paddingTop: '4.5rem', mt: '2rem' }}>
         <Typography
-          variant='h2'
-          component='h2'>
+          variant="h2"
+          component="h2">
           Editar evento
         </Typography>
         <Typography
-          variant='body1'
-          component='p'
+          variant="body1"
+          component="p"
           sx={{ color: '#64748B', mt: '1rem' }}>
           Atualize as informações do seu evento
         </Typography>
@@ -237,347 +271,40 @@ export default function EditEvent() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert
           onClose={() => setShowSuccessToast(false)}
-          severity='success'
-          sx={{ width: '100%' }}>
+          severity="success"
+          sx={FULL_WIDTH}>
           Evento editado com sucesso!
         </Alert>
       </Snackbar>
 
       {submitError && (
         <Alert
-          severity='error'
+          severity="error"
           sx={{ mt: 2 }}>
           {submitError}
         </Alert>
       )}
 
-      <Box
-        component='form'
-        noValidate
-        onSubmit={handleSubmit(onSubmit)}
-        sx={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', mt: '2rem' }}>
-        <Box sx={{ flex: 1, maxWidth: '100%', minWidth: 300 }}>
-          {/* Event Title */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', mb: '2rem' }}>
-            <Typography
-              component='label'
-              htmlFor='nomeEvento'
-              variant='subtitle1'
-              fontWeight='bold'
-              sx={{ mb: '0.5rem' }}>
-              Título do Evento
-            </Typography>
-            <TextField
-              required
-              id='nomeEvento'
-              placeholder='Workshop React: construindo aplicações modernas'
-              {...register('nomeEvento')}
-              error={!!errors.nomeEvento}
-              helperText={errors.nomeEvento?.message}
-              sx={{ width: '100%' }}
-            />
-            <Typography
-              variant='caption'
-              sx={{ mt: '0.5rem', color: 'text.secondary' }}>
-              Um título claro e atrativo para seu evento.
-            </Typography>
-          </Box>
-
-          {/* Description */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', mb: '2rem' }}>
-            <Typography
-              component='label'
-              htmlFor='descricaoEvento'
-              variant='subtitle1'
-              fontWeight='bold'
-              sx={{ mb: '0.5rem' }}>
-              Descrição
-            </Typography>
-            <TextField
-              id='descricaoEvento'
-              placeholder='Faça uma breve descrição do seu evento...'
-              name='descricaoEvento'
-              type='text'
-              multiline
-              minRows={5}
-              {...register('descricaoEvento')}
-              error={!!errors.descricaoEvento}
-              helperText={errors.descricaoEvento?.message}
-              sx={{ width: '100%' }}
-            />
-            <Typography
-              variant='caption'
-              sx={{ mt: '0.5rem', color: 'text.secondary' }}>
-              Descreva seu evento em detalhes para atrair o público certo
-            </Typography>
-          </Box>
-
-          <BannerImg imageData={evento?.capa_url} />
-
-          <Box sx={{ paddingTop: '2rem' }}>
-            <Box sx={{ display: 'flex', gap: '2rem', mb: '2rem', flexWrap: 'wrap', mt: '2rem' }}>
-              <Box sx={{ flex: 1, minWidth: 200 }}>
-                {/* Date */}
-                <Typography
-                  component='label'
-                  variant='subtitle1'
-                  fontWeight='bold'
-                  sx={{ mb: '0.5rem', display: 'block' }}>
-                  Data do Evento
-                </Typography>
-                <TextField
-                  id='data'
-                  placeholder='Selecione uma data'
-                  type='date'
-                  inputProps={{ min: today }}
-                  {...register('data')}
-                  error={!!errors.data}
-                  helperText={errors.data?.message}
-                  sx={{ width: '100%' }}
-                />
-                <Typography
-                  variant='caption'
-                  sx={{ mt: '0.5rem', color: 'text.secondary', display: 'block' }}>
-                  A data em que o evento ocorrerá
-                </Typography>
-              </Box>
-              {/* Event Timepicker */}
-              <Box sx={{ flex: 1, minWidth: 200 }}>
-                <Typography
-                  component='label'
-                  variant='subtitle1'
-                  fontWeight='bold'
-                  sx={{ mb: '0.5rem', display: 'block' }}>
-                  Horário Inicial
-                </Typography>
-                <TextField
-                  id='horarioInicial'
-                  type='time'
-                  {...register('horarioInicial')}
-                  error={!!errors.horarioInicial}
-                  helperText={errors.horarioInicial?.message}
-                  sx={{ width: '100%' }}
-                />
-                <Typography
-                  variant='caption'
-                  sx={{ mt: '0.5rem', color: 'text.secondary', display: 'block' }}>
-                  Horário que começa seu evento
-                </Typography>
-              </Box>
-              {/* Event End-Time */}
-              <Box sx={{ flex: 1, minWidth: 200 }}>
-                <Typography
-                  component='label'
-                  variant='subtitle1'
-                  fontWeight='bold'
-                  sx={{ mb: '0.5rem', display: 'block' }}>
-                  Horário Final
-                </Typography>
-                <TextField
-                  id='horarioFinal'
-                  type='time'
-                  placeholder='00:00'
-                  {...register('horarioFinal')}
-                  error={!!errors.horarioFinal}
-                  helperText={errors.horarioFinal?.message}
-                  sx={{ width: '100%' }}
-                />
-                <Typography
-                  variant='caption'
-                  sx={{ mt: '0.5rem', color: 'text.secondary', display: 'block' }}>
-                  Horário que termina seu evento
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', gap: '3rem', mb: '2rem', flexWrap: 'wrap' }}>
-              <Box sx={{ flex: 1, minWidth: 200 }}>
-                <FormControl
-                  fullWidth
-                  error={!!errors.modalidade}>
-                  <InputLabel id='modalidade-label'>Modalidade do Evento</InputLabel>
-                  <Controller
-                    name='modalidade'
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        {...field}
-                        labelId='modalidade-label'
-                        id='modalidade'
-                        label='Modalidade do Evento'>
-                        <MenuItem value='presential'>Presencial</MenuItem>
-                        <MenuItem value='online'>Online</MenuItem>
-                        <MenuItem value='hybrid'>Híbrido</MenuItem>
-                      </Select>
-                    )}
-                  />
-                </FormControl>
-                <Typography
-                  variant='caption'
-                  sx={{ mt: '0.5rem', color: 'text.secondary', display: 'block' }}>
-                  Selecione o tipo de modalidade do evento
-                </Typography>
-                {errors.modalidade && (
-                  <Typography
-                    variant='caption'
-                    color='error.main'
-                    sx={{ display: 'block' }}>
-                    {errors.modalidade.message}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-
-            {/* Link do evento (opcional para eventos online) */}
-            {watchedModalidade === 'online' && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', mb: '2rem' }}>
-                <Typography
-                  component='label'
-                  htmlFor='link'
-                  variant='subtitle1'
-                  fontWeight='bold'
-                  sx={{ mb: '0.5rem' }}>
-                  Link do Evento (Opcional)
-                </Typography>
-                <TextField
-                  id='link'
-                  placeholder='https://meet.google.com/...'
-                  {...register('link')}
-                  error={!!errors.link}
-                  helperText={errors.link?.message}
-                  sx={{ width: '100%' }}
-                />
-                <Typography
-                  variant='caption'
-                  sx={{ mt: '0.5rem', color: 'text.secondary' }}>
-                  Link para acesso ao evento online
-                </Typography>
-              </Box>
-            )}
-
-            {watchedModalidade && watchedModalidade !== 'online' && (
-              <Box sx={{ display: 'flex', gap: '3rem', mb: '2rem', flexWrap: 'wrap' }}>
-                <Box sx={{ flex: 1, minWidth: 200 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    CEP
-                  </Typography>
-                  <TextField
-                    id='cep'
-                    placeholder='Digite o CEP'
-                    {...register('cep')}
-                    error={!!errors.cep || !!cepError}
-                    helperText={errors.cep?.message || cepError}
-                    sx={{ width: '100%' }}
-                    onBlur={handleCepBlur}
-                    disabled={cepLoading}
-                  />
-                  <Typography
-                    variant='caption'
-                    sx={{ mt: '0.5rem', color: 'text.secondary', display: 'block' }}>
-                    Digite o CEP para buscar endereço automaticamente
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: 2, minWidth: 200 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    Rua
-                  </Typography>
-                  <TextField
-                    id='rua'
-                    placeholder='Rua'
-                    {...register('rua')}
-                    error={!!errors.rua}
-                    helperText={errors.rua?.message}
-                    sx={{ width: '100%' }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 100 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    Número
-                  </Typography>
-                  <TextField
-                    id='numero'
-                    placeholder='Número'
-                    {...register('numero')}
-                    error={!!errors.numero}
-                    helperText={errors.numero?.message}
-                    sx={{ width: '100%' }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 150 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    Bairro
-                  </Typography>
-                  <TextField
-                    id='bairro'
-                    placeholder='Bairro'
-                    {...register('bairro')}
-                    error={!!errors.bairro}
-                    helperText={errors.bairro?.message}
-                    sx={{ width: '100%' }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 120 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    Estado
-                  </Typography>
-                  <TextField
-                    id='estado'
-                    placeholder='Estado'
-                    {...register('estado')}
-                    error={!!errors.estado}
-                    helperText={errors.estado?.message}
-                    sx={{ width: '100%' }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 120 }}>
-                  <Typography
-                    component='label'
-                    variant='subtitle1'
-                    fontWeight='bold'
-                    sx={{ mb: '0.5rem', display: 'block' }}>
-                    Cidade
-                  </Typography>
-                  <TextField
-                    id='cidade'
-                    placeholder='Cidade'
-                    {...register('cidade')}
-                    error={!!errors.cidade}
-                    helperText={errors.cidade?.message}
-                    sx={{ width: '100%' }}
-                  />
-                </Box>
-              </Box>
-            )}
-          </Box>
+      <FormProvider {...methods}>
+        <Box
+          component="form"
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}>
+          <EventFormFields
+            evento={evento}
+            handleCepBlur={handleCepBlur}
+            cepLoading={cepLoading}
+            cepError={cepError} />
 
           <Button
-            type='submit'
-            variant='contained'
-            disabled={isSubmitting}>
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting}
+            sx={{ mt: 2 }}>
             {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
         </Box>
-        <TipCard />
-      </Box>
+      </FormProvider>
     </Container>
   )
 }

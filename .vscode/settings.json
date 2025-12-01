@@ -9,6 +9,10 @@
     "node_modules": false,
     ".husky": false,
     ".vscode": false,
-    "README.md": false
+    "README.md": false,
+    ".docker": false,
+    ".github": false,
+    ".idea": false,
+    ".pnpm-store": false
   }
 }

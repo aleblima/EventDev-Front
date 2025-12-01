@@ -1,59 +1,108 @@
-import Container from '@mui/material/Container'
-import Typography from '@mui/material/Typography'
-import Searchbar from '@/shared/components/Searchbar'
-import EventTypeSelector from '@/shared/components/EventType'
-import CardEventGroup from '@/shared/components/CardEvent/CardEventGroup'
 import Box from '@mui/material/Box'
-import React, { useState, useEffect } from 'react'
-import CalendarView from '@/shared/components/CalendarView'
-import Stack from '@mui/material/Stack'
-import Pagination from '@mui/material/Pagination'
-
 import CircularProgress from '@mui/material/CircularProgress'
-import { getEvents } from '../api/event'
+import Container from '@mui/material/Container'
+import Pagination from '@mui/material/Pagination'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+
+import { getEvents } from '@/api/event'
+import CalendarView from '@/shared/components/CalendarView'
+import CardEventGroup from '@/shared/components/CardEvent/CardEventGroup'
+import EventTypeSelector from '@/shared/components/EventType'
+import Searchbar from '@/shared/components/Searchbar'
+
+function filterBySearchTerm(evento, searchTerm) {
+  if (!searchTerm) {
+    return true
+  }
+  const term = searchTerm.toLowerCase()
+  const titleMatch = evento.title?.toLowerCase().includes(term)
+  const descriptionMatch = evento.description?.toLowerCase().includes(term)
+  const communityMatch = evento.community?.name?.toLowerCase().includes(term)
+
+  return titleMatch || descriptionMatch || communityMatch
+}
 
 export default function Events() {
   const [view, setView] = useState('grid')
   const [page, setPage] = useState(1)
   const [eventType, setEventType] = useState('todos')
-  const [eventos, setEventos] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortFilter, setSortFilter] = useState('recent')
 
-  const eventosPorPagina = 8
+  const eventosPorPagina = 12
 
-  useEffect(() => {
-    const fetchEventos = async () => {
-      try {
-        const data = await getEvents()
-        setEventos(data)
-      } catch (error) {
-        console.error('Erro ao buscar eventos:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchEventos()
-  }, [])
-
-  const eventosFiltrados = eventos.filter((evento) => {
-    if (eventType === 'todos') return true
-    if (eventType === 'online') return evento.modality === 'ONLINE'
-    if (eventType === 'presencial') return evento.modality === 'PRESENTIAL'
-    if (eventType === 'híbrido') return evento.modality === 'HYBRID'
-  })
-
-  const totalPaginas = Math.ceil(eventosFiltrados.length / eventosPorPagina)
-
-  const eventosPaginados = eventosFiltrados.slice((page - 1) * eventosPorPagina, page * eventosPorPagina)
-
-  const handleChangePage = (_event, value) => {
-    setPage(value)
+  // Reset page when filters change
+  const handleSearchChange = (value) => {
+    setSearchTerm(value)
+    setPage(1)
   }
 
-  React.useEffect(() => {
+  const handleTypeChange = (value) => {
+    setEventType(value)
     setPage(1)
-  }, [eventType])
+  }
+
+  const handleSortChange = (value) => {
+    setSortFilter(value)
+    setPage(1)
+  }
+
+  const {
+    data: eventos = [],
+    isLoading: loading,
+    error
+  } = useQuery({
+    queryKey: ['eventos'],
+    queryFn: () => getEvents()
+  })
+
+  const eventosFiltrados = eventos
+    .filter((evento) => {
+      // Filter by search term
+      if (!filterBySearchTerm(evento, searchTerm)) {
+        return false
+      }
+
+      if (eventType === 'todos') {
+        return true
+      }
+
+      const modality = evento.modality?.toUpperCase()
+      const targetModality = {
+        online: 'ONLINE',
+        presential: 'PRESENTIAL',
+        hybrid: 'HYBRID'
+      }[eventType]
+
+      return modality === targetModality
+    })
+    .sort((a, b) => {
+      if (sortFilter === 'recent') {
+        return new Date(b.start_date_time) - new Date(a.start_date_time)
+      }
+      if (sortFilter === 'popular') {
+        // Placeholder: sort by title length as a proxy for "popular" or just alphabetical
+        return a.title.localeCompare(b.title)
+      }
+      if (sortFilter === 'nearby') {
+        // Placeholder: sort by city if available
+        const cityA = a.address?.city || ''
+        const cityB = b.address?.city || ''
+        return cityA.localeCompare(cityB)
+      }
+      return 0
+    })
+
+  const totalPaginas = Math.ceil(eventosFiltrados.length / eventosPorPagina)
+  const eventosPaginados = eventosFiltrados.slice((page - 1) * eventosPorPagina, page * eventosPorPagina)
+
+  const handlePageChange = (event, value) => {
+    setPage(value)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   if (loading) {
     return (
@@ -70,64 +119,75 @@ export default function Events() {
     )
   }
 
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography color="error">Erro ao carregar eventos.</Typography>
+      </Box>
+    )
+  }
+
   return (
-    <Box>
-      <Container
-        sx={{ paddingTop: '4.5rem', paddingBottom: '4.5rem' }}
-        maxWidth='xl'>
+    <Container
+      maxWidth="xl"
+      sx={{
+        paddingTop: '6rem',
+        paddingBottom: '4rem',
+        minHeight: '100vh'
+      }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        spacing={2}
+        sx={{ mb: 4 }}>
         <Typography
-          variant='h3'
-          component='h1'
-          gutterBottom
-          sx={{ fontWeight: 'semibold', mt: 3 }}>
+          variant="h4"
+          component="h1"
+          fontWeight="bold">
           Eventos
         </Typography>
-        <Typography
-          variant='body1'
-          color='text.secondary'
-          sx={{ marginBottom: '1rem' }}>
-          Encontre eventos de tecnologia em todo o Nordeste, presencial e online. Filtre por tipo e data.
-        </Typography>
 
-        <Searchbar
-          view={view}
-          setView={setView}
-          placeholderText={'Buscar eventos...'}
-        />
+        <EventTypeSelector
+          value={eventType}
+          onChange={handleTypeChange} />
+      </Stack>
 
-        <Box sx={{ mb: 2 }}>
-          <EventTypeSelector
-            value={eventType}
-            onChange={setEventType}
-          />
-        </Box>
+      <Searchbar
+        view={view}
+        setView={setView}
+        placeholderText="Buscar eventos..."
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        filter={sortFilter}
+        onFilterChange={handleSortChange} />
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Stack
-            direction={{ xs: 'column', md: 'column', lg: 'row' }}
-            spacing={2}
-            sx={{ width: '100%' }}>
-            <Box sx={{ flexGrow: 1 }}>
-              {view === 'calendar' ? (
-                <CalendarView eventType={eventType} />
-              ) : (
-                <>
-                  <CardEventGroup eventos={eventosPaginados} />
-                  {totalPaginas > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        count={totalPaginas}
-                        page={page}
-                        onChange={handleChangePage}
-                      />
-                    </Box>
-                  )}
-                </>
+      {view === 'grid'
+        ? (
+            <>
+              <CardEventGroup eventos={eventosPaginados} />
+              {totalPaginas > 1 && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    marginTop: '2rem'
+                  }}>
+                  <Pagination
+                    count={totalPaginas}
+                    page={page}
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="large" />
+                </Box>
               )}
-            </Box>
-          </Stack>
-        </Box>
-      </Container>
-    </Box>
+            </>
+          )
+        : (
+            <CalendarView
+              eventType={eventType}
+              eventos={eventosFiltrados} />
+          )}
+    </Container>
   )
 }

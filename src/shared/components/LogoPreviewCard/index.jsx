@@ -1,12 +1,11 @@
+import ImageIcon from '@mui/icons-material/Image'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
-import Typography from '@mui/material/Typography'
-import CardContent from '@mui/material/CardContent'
 import ListItemText from '@mui/material/ListItemText'
-
-import ImageIcon from '@mui/icons-material/Image'
+import Typography from '@mui/material/Typography'
 
 export default function LogoPreviewCard({ imageData }) {
   return (
@@ -16,9 +15,9 @@ export default function LogoPreviewCard({ imageData }) {
       <CardContent>
         <Typography
           gutterBottom
-          fontWeight='bold'
-          fontSize={'15px'}
-          variant='subtitle1'>
+          fontWeight="bold"
+          fontSize="15px"
+          variant="subtitle1">
           Prévia da Logo
         </Typography>
 
@@ -33,29 +32,30 @@ export default function LogoPreviewCard({ imageData }) {
             justifyContent: 'center',
             backgroundColor: '#f1f5f9'
           }}>
-          {imageData ? (
-            <Box
-              component='img'
-              src={typeof imageData === 'string' ? imageData : imageData.url}
-              alt={typeof imageData === 'string' ? 'Logo' : imageData.name}
-              sx={{
-                width: '100%',
-                height: '100%',
-                border: '1px solid #dee3e9',
-                borderRadius: 2,
-                objectFit: 'cover'
-              }}
-            />
-          ) : (
-            <ImageIcon sx={{ fontSize: 40, color: '#94a3b8' }} />
-          )}
+          {imageData
+            ? (
+                <Box
+                  component="img"
+                  src={typeof imageData === 'string' ? imageData : imageData.url}
+                  alt={typeof imageData === 'string' ? 'Logo' : imageData.name}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1px solid #dee3e9',
+                    borderRadius: 2,
+                    objectFit: 'cover'
+                  }} />
+              )
+            : (
+                <ImageIcon sx={{ fontSize: 40, color: '#94a3b8' }} />
+              )}
         </Box>
 
         <Typography
-          variant='subtitle1'
-          fontSize={'15px'}
-          fontWeight='bold'
-          marginTop='1.5rem'>
+          variant="subtitle1"
+          fontSize="15px"
+          fontWeight="bold"
+          marginTop="1.5rem">
           Benefícios de cadastrar sua comunidade
         </Typography>
 
@@ -72,7 +72,13 @@ export default function LogoPreviewCard({ imageData }) {
               key={text}
               disableGutters
               sx={{ paddingLeft: 0 }}>
-              <ListItemText primary={<Typography fontSize={12}>• {text}</Typography>} />
+              <ListItemText
+                primary={(
+                  <Typography fontSize={12}>
+                    •
+                    {text}
+                  </Typography>
+                )} />
             </ListItem>
           ))}
         </List>

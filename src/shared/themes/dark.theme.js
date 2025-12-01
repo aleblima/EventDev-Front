@@ -1,4 +1,8 @@
-export const darkTheme = {
+import { createTheme } from '@mui/material/styles'
+
+const WHITE_12 = 'rgba(255, 255, 255, 0.12)'
+
+const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -46,7 +50,7 @@ export const darkTheme = {
       default: '#121212',
       paper: '#1e1e1e'
     },
-    divider: 'rgba(255, 255, 255, 0.12)',
+    divider: WHITE_12,
     action: {
       active: 'rgba(255, 255, 255, 0.7)',
       hover: 'rgba(255, 255, 255, 0.08)',
@@ -54,11 +58,11 @@ export const darkTheme = {
       selected: 'rgba(255, 255, 255, 0.16)',
       selectedOpacity: 0.16,
       disabled: 'rgba(255, 255, 255, 0.3)',
-      disabledBackground: 'rgba(255, 255, 255, 0.12)',
+      disabledBackground: WHITE_12,
       disabledOpacity: 0.38,
-      focus: 'rgba(255, 255, 255, 0.12)',
+      focus: WHITE_12,
       focusOpacity: 0.12,
-      activatedOpacity: 0.24
+      activatedOpacity: 0.12
     }
   },
   typography: {
@@ -291,6 +295,6 @@ export const darkTheme = {
       }
     }
   }
-}
+})
 
 export default darkTheme

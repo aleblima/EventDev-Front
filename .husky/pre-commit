@@ -1,3 +1,3 @@
 #!/bin/sh
 
-pnpm lint-staged && npx validate-branch-name
+pnpm lint-staged && npx validate-branch-name && pnpm run check-blocked-files

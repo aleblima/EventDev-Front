@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import Session from 'supertokens-auth-react/recipe/session'
 
 const AuthContext = createContext({
@@ -9,42 +9,49 @@ const AuthContext = createContext({
   checkAuth: () => {}
 })
 
+async function fetchUserData() {
+  try {
+    const response = await fetch('http://localhost:5122/api/v1/auth/me', {
+      method: 'GET',
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const userData = await response.json()
+    let normalizedUser = userData.user
+
+    if (normalizedUser && normalizedUser.roles?.includes('community')) {
+      if (normalizedUser.communityId) {
+        normalizedUser = { ...normalizedUser, communityId: normalizedUser.communityId }
+      } else if (normalizedUser.community?.id) {
+        normalizedUser = { ...normalizedUser, communityId: normalizedUser.community.id }
+      }
+    }
+    return normalizedUser
+  } catch (error) {
+    console.error('Erro ao buscar dados do usuário:', error)
+  }
+  return null
+}
+
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       setLoading(true)
       const sessionExists = await Session.doesSessionExist()
 
       if (sessionExists) {
         setIsAuthenticated(true)
-
-        // Buscar dados do usuário
-        try {
-          const response = await fetch('http://localhost:5122/api/v1/auth/me', {
-            method: 'GET',
-            credentials: 'include'
-          })
-
-          if (response.ok) {
-            const userData = await response.json()
-            let normalizedUser = userData.user
-            if (normalizedUser && normalizedUser.roles?.includes('community')) {
-              if (normalizedUser.communityId) {
-                normalizedUser = { ...normalizedUser, communityId: normalizedUser.communityId }
-              } else if (normalizedUser.community?.id) {
-                normalizedUser = { ...normalizedUser, communityId: normalizedUser.community.id }
-              }
-            }
-
-            setUser(normalizedUser)
-          }
-        } catch (error) {
-          console.error('Erro ao buscar dados do usuário:', error)
-          // Manter autenticado mesmo se não conseguir buscar dados do usuário
+        const userData = await fetchUserData()
+        if (userData) {
+          setUser(userData)
         }
       } else {
         setIsAuthenticated(false)
@@ -57,9 +64,9 @@ function AuthProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await Session.signOut()
       setIsAuthenticated(false)
@@ -72,24 +79,27 @@ function AuthProvider({ children }) {
       setUser(null)
       window.location.href = '/'
     }
-  }
+  }, [])
 
   useEffect(() => {
     checkAuth()
 
     // Não há addEventListener no SuperTokens React, mas podemos verificar periodicamente
     // ou usar outros métodos de sincronização se necessário
-  }, [])
+  }, [checkAuth])
 
-  const value = {
-    isAuthenticated,
-    user,
-    loading,
-    signOut,
-    checkAuth
-  }
+  const value = useMemo(
+    () => ({
+      isAuthenticated,
+      user,
+      loading,
+      signOut,
+      checkAuth
+    }),
+    [isAuthenticated, user, loading, signOut, checkAuth]
+  )
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext value={value}>{children}</AuthContext>
 }
 
 export default AuthProvider

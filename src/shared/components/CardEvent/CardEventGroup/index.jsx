@@ -2,7 +2,9 @@ import Box from '@mui/material/Box'
 
 import CardEvent from '@/shared/components/CardEvent'
 
-export default function CardEventGroup({ eventos = [], eventosPaginados = [] }) {
+const EMPTY_ARRAY = []
+
+export default function CardEventGroup({ eventos = EMPTY_ARRAY, eventosPaginados = EMPTY_ARRAY }) {
   const paginados = Array.isArray(eventosPaginados) ? eventosPaginados : []
   const eventosParaRenderizar = eventos.length > 0 ? eventos : paginados
 
@@ -20,16 +22,17 @@ export default function CardEventGroup({ eventos = [], eventosPaginados = [] }) 
         marginBottom: '2rem',
         justifyItems: 'center'
       }}>
-      {eventosParaRenderizar.length > 0 ? (
-        eventosParaRenderizar.map((evento) => (
-          <CardEvent
-            key={evento.id}
-            evento={evento}
-          />
-        ))
-      ) : (
-        <Box sx={{ gridColumn: '1/-1', textAlign: 'center', py: 4 }}>Sem eventos para mostrar</Box>
-      )}
+      {eventosParaRenderizar.length > 0
+        ? (
+            eventosParaRenderizar.map((evento) => (
+              <CardEvent
+                key={evento.id}
+                evento={evento} />
+            ))
+          )
+        : (
+            <Box sx={{ gridColumn: '1/-1', textAlign: 'center', py: 4 }}>Sem eventos para mostrar</Box>
+          )}
     </Box>
   )
 }
